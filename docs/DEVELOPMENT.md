@@ -35,7 +35,8 @@ npm start watch      # test harness with sample data and live reload
 npm run lint
 ```
 
-The test harness has no Dataverse, so it shows built-in sample data.
+The test harness has no Dataverse, so it shows built-in sample data. It also only loads the last language file in
+the manifest, so its texts appear in Swedish.
 
 To try it in a real environment, push a development build into your own environment's solution:
 

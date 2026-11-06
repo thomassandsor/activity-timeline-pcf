@@ -15,19 +15,19 @@ import { FeedPagers, FileContent, MergedPager, NewNote, Stream, TimelineDataSour
 const HOUR = 3600 * 1000;
 const DAY = 24 * HOUR;
 
-const ME: PartyRef = { id: "u-1", entity: "systemuser", name: "Kari Nordmann" };
-const SUPPORT: PartyRef = { id: "q-1", entity: "queue", name: "Kundeservice", address: "support@example.com" };
-const INGRID: PartyRef = { id: "c-1", entity: "contact", name: "Ingrid Haugen", address: "ingrid.haugen@fjordbil.example" };
-const OLA: PartyRef = { id: "c-2", entity: "contact", name: "Ola Berg", address: "ola.berg@fjordbil.example" };
-const MARTE: PartyRef = { id: "u-2", entity: "systemuser", name: "Marte Lie" };
+const ME: PartyRef = { id: "u-1", entity: "systemuser", name: "Alex Morgan" };
+const SUPPORT: PartyRef = { id: "q-1", entity: "queue", name: "Customer Support", address: "support@example.com" };
+const EMMA: PartyRef = { id: "c-1", entity: "contact", name: "Emma Clarke", address: "emma.clarke@harbormotors.example" };
+const OLIVER: PartyRef = { id: "c-2", entity: "contact", name: "Oliver Reed", address: "oliver.reed@harbormotors.example" };
+const SAM: PartyRef = { id: "u-2", entity: "systemuser", name: "Sam Patel" };
 
 const LABELS: Record<string, string> = {
-    email: "E-post",
-    phonecall: "Telefonsamtale",
-    task: "Oppgave",
-    appointment: "Avtale",
-    annotation: "Notat",
-    new_message: "Melding",
+    email: "Email",
+    phonecall: "Phone Call",
+    task: "Task",
+    appointment: "Appointment",
+    annotation: "Note",
+    new_message: "Message",
 };
 
 // A 1x1 PNG, used as a stand-in for attachment bodies
@@ -57,61 +57,61 @@ interface Seed {
 function seeds(): Seed[] {
     return [
         {
-            entity: "appointment", title: "Befaring hos Fjordbil Skøyen – låssylinder TX-400", ago: 20 * HOUR, start: -2 * DAY - 3 * HOUR, due: -2 * DAY - 2 * HOUR,
-            state: "scheduled", status: "Planlagt", attendees: [INGRID, ME], body: "Gjennomgang av boksen på stedet. Ta med ny låssylinder og momentnøkkel.",
+            entity: "appointment", title: "Site visit at Harbor Motors: TX-400 lock cylinder", ago: 20 * HOUR, start: -2 * DAY - 3 * HOUR, due: -2 * DAY - 2 * HOUR,
+            state: "scheduled", status: "Scheduled", attendees: [EMMA, ME], body: "Go through the roof box on site. Bring a new lock cylinder and a torque wrench.",
         },
         {
-            entity: "task", title: "Send ny låssylinder til Fjordbil Skøyen (garanti)", ago: 3 * DAY, due: 1 * DAY, state: "open", status: "Ikke startet", priority: "high",
-            body: "Kunden har fått bekreftet garanti. Send del nr. 7731-LS med ekspress, og legg sporingsnummer i saken.",
+            entity: "task", title: "Send new lock cylinder to Harbor Motors (warranty)", ago: 3 * DAY, due: 1 * DAY, state: "open", status: "Not Started", priority: "high",
+            body: "Warranty is confirmed. Ship part 7731-LS by express and add the tracking number to the case.",
         },
         {
-            entity: "email", title: "Re: Låssylinder henger seg | Case-01194", ago: 2 * HOUR, state: "completed", status: "Mottatt", direction: "in", from: [INGRID], to: [SUPPORT], cc: [OLA], attachments: 2,
-            body: `<div>Hei Kari,</div><div><br></div><div>Takk for rask respons! Bildene av låsen er vedlagt. Boksen ble levert inn hos oss i går, og kunden ønsker den tilbake før helgen hvis mulig.</div><div><br></div><div>Mvh<br>Ingrid Haugen<br>Fjordbil Skøyen</div><div id="divRplyFwdMsg"><b>Fra:</b> Kundeservice<br><b>Sendt:</b> mandag<br><b>Emne:</b> Låssylinder henger seg</div><blockquote>Hei Ingrid, kan du sende bilder av låssylinderen?</blockquote>`,
+            entity: "email", title: "Re: Lock cylinder sticking | Case-01194", ago: 2 * HOUR, state: "completed", status: "Received", direction: "in", from: [EMMA], to: [SUPPORT], cc: [OLIVER], attachments: 2,
+            body: `<div>Hi Alex,</div><div><br></div><div>Thanks for the quick reply! The inspection report and the warranty form are attached. The box was handed in to us yesterday, and the customer would like it back before the weekend if possible.</div><div><br></div><div>Best regards<br>Emma Clarke<br>Harbor Motors</div><div id="divRplyFwdMsg"><b>From:</b> Customer Support<br><b>Sent:</b> Monday<br><b>Subject:</b> Lock cylinder sticking</div><blockquote>Hi Emma, could you send us an inspection report and the warranty form?</blockquote>`,
         },
         {
-            entity: "new_message", title: "Melding fra kundeportalen: Når kommer delen?", ago: 5 * HOUR, state: "open", status: "Åpen", from: [INGRID],
-            body: "Hei! Vi lurer på når den nye låssylinderen kommer, kunden spør daglig. Takk!",
+            entity: "new_message", title: "Message from the customer portal: When will the part arrive?", ago: 5 * HOUR, state: "open", status: "Open", from: [EMMA],
+            body: "Hi! When will the new lock cylinder arrive? The customer asks every day. Thanks!",
         },
         {
-            entity: "phonecall", title: "Ingrid ringte om status på garantisaken", ago: 26 * HOUR, state: "completed", status: "Utført", direction: "in", from: [INGRID], to: [ME], duration: 12,
-            body: "Avklart at garantien dekker låssylinder. Lovet tilbakemelding på leveringstid innen fredag.",
+            entity: "phonecall", title: "Emma called about the warranty case", ago: 26 * HOUR, state: "completed", status: "Received", direction: "in", from: [EMMA], to: [ME], duration: 12,
+            body: "Confirmed that the warranty covers the lock cylinder. Promised an update on delivery time by Friday.",
         },
         {
-            entity: "annotation", title: "Bilder fra verkstedet", ago: 28 * HOUR, from: [MARTE], file: { name: "laassylinder-naerbilde.jpg", mime: "image/jpeg", size: 482113 },
-            body: "Låssylinderen er tydelig slitt på innsiden. Ser ut som fukt har kommet inn via pakningen.",
+            entity: "annotation", title: "Photos from the workshop", ago: 28 * HOUR, from: [SAM], file: { name: "lock-cylinder-closeup.jpg", mime: "image/jpeg", size: 482113 },
+            body: "The cylinder is clearly worn on the inside. It looks like moisture got in through the seal.",
         },
         {
-            entity: "email", title: "Låssylinder henger seg | Case-01194", ago: 2 * DAY + 4 * HOUR, state: "completed", status: "Sendt", direction: "out", from: [SUPPORT], to: [INGRID],
-            body: `<p>Hei Ingrid,</p><p>Takk for henvendelsen. Kan du sende bilder av låssylinderen og serienummeret på boksen?</p><p>Vennlig hilsen<br>Kundeservice</p>`,
+            entity: "email", title: "Lock cylinder sticking | Case-01194", ago: 2 * DAY + 4 * HOUR, state: "completed", status: "Sent", direction: "out", from: [SUPPORT], to: [EMMA],
+            body: `<p>Hi Emma,</p><p>Thanks for getting in touch. Could you send us an inspection report and the warranty form?</p><p>Kind regards<br>Customer Support</p>`,
         },
         {
-            entity: "email", title: "Låssylinder henger seg – TX-400", ago: 2 * DAY + 6 * HOUR, state: "completed", status: "Mottatt", direction: "in", from: [INGRID], to: [SUPPORT], attachments: 1,
-            body: `<p>Hei,</p><p>En kunde har levert inn en TX-400 der låssylinderen henger seg. Nøkkelen lar seg ikke vri helt rundt. Boksen er kjøpt i mars i år.</p><p>Mvh Ingrid Haugen</p>`,
+            entity: "email", title: "Lock cylinder sticking", ago: 2 * DAY + 6 * HOUR, state: "completed", status: "Received", direction: "in", from: [EMMA], to: [SUPPORT], attachments: 1,
+            body: `<p>Hi,</p><p>A customer has handed in a TX-400 where the lock cylinder sticks. The key won't turn all the way. The box was bought in March this year.</p><p>Best regards, Emma Clarke</p>`,
         },
         {
-            entity: "task", title: "Registrer serienummer og kjøpsdato", ago: 2 * DAY + 2 * HOUR, due: 2 * DAY - 2 * HOUR, state: "completed", status: "Fullført", priority: "normal",
-            body: "Serienr. TX-2026-04411. Kjøpt 14. mars 2026 hos Fjordbil Skøyen.",
+            entity: "task", title: "Register serial number and purchase date", ago: 2 * DAY + 2 * HOUR, due: 2 * DAY - 2 * HOUR, state: "completed", status: "Completed", priority: "normal",
+            body: "Serial no. TX-2026-04411. Bought March 14, 2026 at Harbor Motors.",
         },
         {
-            entity: "annotation", title: "Intern vurdering", ago: 4 * DAY, from: [ME],
-            body: "Tredje sak denne måneden med låssylinder på TX-400 fra samme batch. Bør meldes til produktansvarlig.",
+            entity: "annotation", title: "Internal assessment", ago: 4 * DAY, from: [ME],
+            body: "Third case this month with the lock cylinder on TX-400 from the same batch. Should be reported to the product manager.",
         },
         {
-            entity: "task", title: "Meld avvik til produktansvarlig (batch 2026-03)", ago: 4 * DAY, due: 6 * DAY - 4 * DAY, state: "open", status: "Pågår", priority: "normal", owner: MARTE,
+            entity: "task", title: "Report the defect to the product manager (batch 2026-03)", ago: 4 * DAY, due: 6 * DAY - 4 * DAY, state: "open", status: "In Progress", priority: "normal", owner: SAM,
         },
         {
-            entity: "phonecall", title: "Ringe Ola Berg om alternativ boks", ago: 3 * HOUR, due: -1 * DAY, state: "open", status: "Åpen", direction: "out", from: [ME], to: [OLA],
+            entity: "phonecall", title: "Call Oliver Reed about a replacement box", ago: 3 * HOUR, due: -1 * DAY, state: "open", status: "Open", direction: "out", from: [ME], to: [OLIVER],
         },
-        { entity: "email", title: "Ordrebekreftelse 104231", ago: 21 * DAY, state: "completed", status: "Mottatt", direction: "in", from: [OLA], to: [SUPPORT], attachments: 1, body: "<p>Vedlagt ordrebekreftelse for 4 bokser.</p>" },
-        { entity: "appointment", title: "Kvartalsmøte Fjordbil – forecast Q4", ago: 35 * DAY, start: 35 * DAY, due: 35 * DAY - HOUR, state: "completed", status: "Fullført", attendees: [OLA, INGRID, ME] },
-        { entity: "phonecall", title: "Oppfølging etter levering", ago: 49 * DAY, state: "completed", status: "Utført", direction: "out", from: [ME], to: [OLA], duration: 6 },
-        { entity: "task", title: "Oppdater kontaktinfo for Fjordbil Skøyen", ago: 63 * DAY, due: 60 * DAY, state: "completed", status: "Fullført" },
-        { entity: "email", title: "Velkommen som forhandler", ago: 84 * DAY, state: "completed", status: "Sendt", direction: "out", from: [ME], to: [INGRID, OLA], body: "<p>Hei begge, og velkommen som forhandler!</p>" },
-        { entity: "annotation", title: "Avtalevilkår", ago: 90 * DAY, from: [ME], file: { name: "forhandleravtale-2026.pdf", mime: "application/pdf", size: 1203342 } },
-        { entity: "appointment", title: "Oppstartsmøte forhandleravtale", ago: 92 * DAY, start: 92 * DAY, due: 92 * DAY - HOUR, state: "completed", status: "Fullført", attendees: [OLA, ME] },
-        { entity: "email", title: "Tilbud takbokser vinter 2026/27", ago: 120 * DAY, state: "completed", status: "Sendt", direction: "out", from: [ME], to: [OLA], attachments: 1 },
-        { entity: "new_message", title: "Melding fra kundeportalen: Takk for besøket", ago: 125 * DAY, state: "completed", status: "Lukket", from: [OLA], body: "Takk for et godt møte i går." },
-        { entity: "phonecall", title: "Første kontakt – interessert i forhandleravtale", ago: 140 * DAY, state: "completed", status: "Utført", direction: "in", from: [OLA], to: [ME], duration: 18 },
+        { entity: "email", title: "Order confirmation 104231", ago: 21 * DAY, state: "completed", status: "Received", direction: "in", from: [OLIVER], to: [SUPPORT], attachments: 1, body: "<p>Attached is the order confirmation for 4 boxes.</p>" },
+        { entity: "appointment", title: "Quarterly meeting with Harbor Motors: Q4 forecast", ago: 35 * DAY, start: 35 * DAY, due: 35 * DAY - HOUR, state: "completed", status: "Completed", attendees: [OLIVER, EMMA, ME] },
+        { entity: "phonecall", title: "Follow-up after delivery", ago: 49 * DAY, state: "completed", status: "Made", direction: "out", from: [ME], to: [OLIVER], duration: 6 },
+        { entity: "task", title: "Update contact details for Harbor Motors", ago: 63 * DAY, due: 60 * DAY, state: "completed", status: "Completed" },
+        { entity: "email", title: "Welcome as a dealer", ago: 84 * DAY, state: "completed", status: "Sent", direction: "out", from: [ME], to: [EMMA, OLIVER], body: "<p>Hi both, and welcome as a dealer!</p>" },
+        { entity: "annotation", title: "Agreement terms", ago: 90 * DAY, from: [ME], file: { name: "dealer-agreement-2026.pdf", mime: "application/pdf", size: 1203342 } },
+        { entity: "appointment", title: "Kickoff meeting for the dealer agreement", ago: 92 * DAY, start: 92 * DAY, due: 92 * DAY - HOUR, state: "completed", status: "Completed", attendees: [OLIVER, ME] },
+        { entity: "email", title: "Quote for roof boxes, winter 2026/27", ago: 120 * DAY, state: "completed", status: "Sent", direction: "out", from: [ME], to: [OLIVER], attachments: 1 },
+        { entity: "new_message", title: "Message from the customer portal: Thanks for the visit", ago: 125 * DAY, state: "completed", status: "Closed", from: [OLIVER], body: "Thanks for a good meeting yesterday." },
+        { entity: "phonecall", title: "First contact: interested in a dealer agreement", ago: 140 * DAY, state: "completed", status: "Received", direction: "in", from: [OLIVER], to: [ME], duration: 18 },
     ];
 }
 
@@ -145,7 +145,7 @@ function build(seed: Seed, index: number, now: number): TimelineItem {
         statusLabel: seed.status,
         isOverdue: !isNote && seed.entity !== "email" && (state === "open" || state === "scheduled") && !!scheduledEnd && scheduledEnd.getTime() < now,
         priority: seed.priority,
-        priorityLabel: seed.priority === "high" ? "Høy" : seed.priority === "low" ? "Lav" : seed.priority ? "Normal" : undefined,
+        priorityLabel: seed.priority === "high" ? "High" : seed.priority === "low" ? "Low" : seed.priority ? "Normal" : undefined,
         owner: seed.owner ?? ME,
         createdBy: seed.from?.[0] ?? ME,
         from: seed.from ?? [],
@@ -272,20 +272,20 @@ export class SampleDataSource implements TimelineDataSource {
 
     public getDetails(item: TimelineItem): Promise<ItemDetails> {
         const fields = [];
-        if (item.scheduledStart) fields.push({ name: "scheduledstart", label: "Starttid", value: item.scheduledStart.toLocaleString("nb-NO") });
-        if (item.scheduledEnd) fields.push({ name: "scheduledend", label: item.entity === "appointment" ? "Sluttid" : "Forfallsdato", value: item.scheduledEnd.toLocaleString("nb-NO") });
-        if (item.priorityLabel) fields.push({ name: "prioritycode", label: "Prioritet", value: item.priorityLabel });
-        if (item.entity === "appointment") fields.push({ name: "location", label: "Sted", value: "Fjordbil Skøyen, Storgata 1" });
-        if (item.entity === "phonecall") fields.push({ name: "phonenumber", label: "Telefonnummer", value: "+47 22 51 30 00" });
-        if (item.owner) fields.push({ name: "ownerid", label: "Eier", value: item.owner.name });
+        if (item.scheduledStart) fields.push({ name: "scheduledstart", label: "Start Time", value: item.scheduledStart.toLocaleString("en-US") });
+        if (item.scheduledEnd) fields.push({ name: "scheduledend", label: item.entity === "appointment" ? "End Time" : "Due Date", value: item.scheduledEnd.toLocaleString("en-US") });
+        if (item.priorityLabel) fields.push({ name: "prioritycode", label: "Priority", value: item.priorityLabel });
+        if (item.entity === "appointment") fields.push({ name: "location", label: "Location", value: "Harbor Motors, 1 Main Street" });
+        if (item.entity === "phonecall") fields.push({ name: "phonenumber", label: "Phone Number", value: "+1 555 0100" });
+        if (item.owner) fields.push({ name: "ownerid", label: "Owner", value: item.owner.name });
 
         const attachments: AttachmentRef[] = item.file
             ? [item.file]
             : Array.from({ length: item.attachmentCount ?? 0 }, (_, n) => ({
                 id: `${item.id}-att-${n}`,
                 entity: "activitymimeattachment" as const,
-                fileName: n === 0 ? "laas-bilde-1.jpg" : `vedlegg-${n + 1}.pdf`,
-                mimeType: n === 0 ? "image/jpeg" : "application/pdf",
+                fileName: n === 0 ? "inspection-report.pdf" : "warranty-form.pdf",
+                mimeType: "application/pdf",
                 size: 180000 + n * 90000,
             }));
         return this.delay({ fields, attachments }, 350);
@@ -318,7 +318,7 @@ export class SampleDataSource implements TimelineDataSource {
             const target = this.items.find((i) => i.key === item.key);
             if (target) {
                 target.state = "completed";
-                target.statusLabel = "Fullført";
+                target.statusLabel = "Completed";
                 target.isOverdue = false;
                 target.actualEnd = new Date();
             }

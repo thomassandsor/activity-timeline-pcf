@@ -4,6 +4,8 @@ A free, open-source replacement for the timeline on model-driven forms in Dynami
 any table that has activities or notes. Users see what's overdue and what's coming up, read emails as
 conversations, and preview any activity without leaving the form.
 
+![The timeline: upcoming items on top, then each day's activities, with overdue items marked in red](docs/images/timeline.png)
+
 - **Each activity at the date that matters:** meetings when they're held, tasks and calls by due date (completion
   date once done), everything else when it was created.
 - **Upcoming section** on top: open meetings, tasks and calls still ahead, soonest first.
@@ -20,6 +22,10 @@ conversations, and preview any activity without leaving the form.
 - **English, Norwegian and Swedish**, following each user's language in Dataverse.
 
 Everything shown is data from Dataverse; nothing is generated or summarised.
+
+![The preview panel showing an email conversation next to the timeline](docs/images/preview.png)
+
+*The screenshots show made-up sample data.*
 
 ## Requirements
 

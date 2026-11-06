@@ -19,7 +19,7 @@ interface ContextInfo {
 
 declare const process: { env: { NODE_ENV?: string } };
 
-const SAMPLE_RECORD: RecordContext = { entity: "incident", id: "sample", name: "Låssylinder henger seg – TX-400" };
+const SAMPLE_RECORD: RecordContext = { entity: "incident", id: "sample", name: "Lock cylinder sticking on TX-400" };
 declare const require: (id: string) => unknown;
 
 /** Sample data for the test harness. The require sits in a branch webpack removes from production builds. */
