@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="Sandsor" constructor="ActivityTimeline" version="0.1.10" display-name-key="Control_Name" description-key="Control_Description" control-type="virtual" >
+    <external-service-usage enabled="false">
+    </external-service-usage>
+
+    <!-- The timeline doesn't read or write this column. It only anchors the control on the form, so any column will do. -->
+    <type-group name="anyColumn">
+      <type>SingleLine.Text</type>
+      <type>SingleLine.Email</type>
+      <type>SingleLine.Phone</type>
+      <type>SingleLine.URL</type>
+      <type>SingleLine.TextArea</type>
+      <type>Multiple</type>
+      <type>Whole.None</type>
+      <type>DateAndTime.DateAndTime</type>
+      <type>DateAndTime.DateOnly</type>
+      <type>OptionSet</type>
+      <type>TwoOptions</type>
+    </type-group>
+    <property name="anchor" display-name-key="Anchor_Name" description-key="Anchor_Description" of-type-group="anyColumn" usage="bound" required="true" />
+
+    <property name="activityTypes" display-name-key="ActivityTypes_Name" description-key="ActivityTypes_Description" of-type="SingleLine.Text" usage="input" required="false" default-value="email,phonecall,task,appointment" />
+    <property name="includeNotes" display-name-key="IncludeNotes_Name" description-key="IncludeNotes_Description" of-type="Enum" usage="input" required="false" default-value="1">
+      <value name="yes" display-name-key="Option_Yes">1</value>
+      <value name="no" display-name-key="Option_No">0</value>
+    </property>
+    <property name="relatedScope" display-name-key="RelatedScope_Name" description-key="RelatedScope_Description" of-type="Enum" usage="input" required="false" default-value="parties">
+      <value name="regarding" display-name-key="RelatedScope_Regarding">regarding</value>
+      <value name="parties" display-name-key="RelatedScope_Parties">parties</value>
+    </property>
+    <property name="sortBy" display-name-key="SortBy_Name" description-key="SortBy_Description" of-type="Enum" usage="input" required="false" default-value="eventdate">
+      <value name="eventdate" display-name-key="SortBy_EventDate">eventdate</value>
+      <value name="createdon" display-name-key="SortBy_Created">createdon</value>
+      <value name="modifiedon" display-name-key="SortBy_Modified">modifiedon</value>
+      <value name="actualend" display-name-key="SortBy_ActualEnd">actualend</value>
+      <value name="scheduledend" display-name-key="SortBy_DueDate">scheduledend</value>
+      <value name="scheduledstart" display-name-key="SortBy_StartDate">scheduledstart</value>
+      <value name="senton" display-name-key="SortBy_SentOn">senton</value>
+      <value name="sortdate" display-name-key="SortBy_SortDate">sortdate</value>
+    </property>
+    <property name="notesSortBy" display-name-key="NotesSortBy_Name" description-key="NotesSortBy_Description" of-type="Enum" usage="input" required="false" default-value="modifiedon">
+      <value name="createdon" display-name-key="SortBy_Created">createdon</value>
+      <value name="modifiedon" display-name-key="SortBy_Modified">modifiedon</value>
+    </property>
+    <property name="sortOrder" display-name-key="SortOrder_Name" description-key="SortOrder_Description" of-type="Enum" usage="input" required="false" default-value="desc">
+      <value name="desc" display-name-key="SortOrder_Desc">desc</value>
+      <value name="asc" display-name-key="SortOrder_Asc">asc</value>
+    </property>
+    <property name="createTypes" display-name-key="CreateTypes_Name" description-key="CreateTypes_Description" of-type="SingleLine.Text" usage="input" required="false" default-value="email,phonecall,task,appointment" />
+    <property name="pageSize" display-name-key="PageSize_Name" description-key="PageSize_Description" of-type="Whole.None" usage="input" required="false" default-value="20" />
+    <property name="height" display-name-key="Height_Name" description-key="Height_Description" of-type="Whole.None" usage="input" required="false" default-value="0" />
+    <property name="density" display-name-key="Density_Name" description-key="Density_Description" of-type="Enum" usage="input" required="false" default-value="comfortable">
+      <value name="comfortable" display-name-key="Density_Comfortable">comfortable</value>
+      <value name="compact" display-name-key="Density_Compact">compact</value>
+    </property>
+    <property name="showOverview" display-name-key="ShowOverview_Name" description-key="ShowOverview_Description" of-type="Enum" usage="input" required="false" default-value="1">
+      <value name="yes" display-name-key="Option_Yes">1</value>
+      <value name="no" display-name-key="Option_No">0</value>
+    </property>
+    <property name="threadEmails" display-name-key="ThreadEmails_Name" description-key="ThreadEmails_Description" of-type="Enum" usage="input" required="false" default-value="1">
+      <value name="yes" display-name-key="Option_Yes">1</value>
+      <value name="no" display-name-key="Option_No">0</value>
+    </property>
+    <property name="advancedConfig" display-name-key="AdvancedConfig_Name" description-key="AdvancedConfig_Description" of-type="Multiple" usage="input" required="false" />
+
+    <resources>
+      <code path="index.ts" order="1"/>
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+      <resx path="strings/ActivityTimeline.1033.resx" version="1.0.0" />
+      <resx path="strings/ActivityTimeline.1044.resx" version="1.0.0" />
+      <resx path="strings/ActivityTimeline.1053.resx" version="1.0.0" />
+    </resources>
+
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+      <uses-feature name="Utility" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Control_Name" xml:space="preserve">
+    <value>Activity Timeline</value>
+  </data>
+  <data name="Control_Description" xml:space="preserve">
+    <value>A configurable timeline of activities and notes for any table, with preview, filters and activity overview.</value>
+  </data>
+  <data name="Anchor_Name" xml:space="preserve">
+    <value>Host column</value>
+  </data>
+  <data name="Anchor_Description" xml:space="preserve">
+    <value>Any column on the form. The timeline doesn't read or change it.</value>
+  </data>
+  <data name="ActivityTypes_Name" xml:space="preserve">
+    <value>Activity types</value>
+  </data>
+  <data name="ActivityTypes_Description" xml:space="preserve">
+    <value>Comma-separated logical names, e.g. email,phonecall,task,appointment,new_message. Use * for all activity types.</value>
+  </data>
+  <data name="IncludeNotes_Name" xml:space="preserve">
+    <value>Show notes</value>
+  </data>
+  <data name="IncludeNotes_Description" xml:space="preserve">
+    <value>Show notes and file attachments on the record, and let users write notes.</value>
+  </data>
+  <data name="Option_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Option_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="RelatedScope_Name" xml:space="preserve">
+    <value>Related activities</value>
+  </data>
+  <data name="RelatedScope_Description" xml:space="preserve">
+    <value>Activities regarding the record only, or also activities where the record is a sender, recipient or attendee.</value>
+  </data>
+  <data name="RelatedScope_Regarding" xml:space="preserve">
+    <value>Regarding the record</value>
+  </data>
+  <data name="RelatedScope_Parties" xml:space="preserve">
+    <value>Regarding or participant</value>
+  </data>
+  <data name="SortBy_Name" xml:space="preserve">
+    <value>Sort by</value>
+  </data>
+  <data name="SortBy_Description" xml:space="preserve">
+    <value>The date the timeline is ordered and grouped by. Activity date (default) uses the date that matters per type: meetings by start, tasks and calls by due date (completed date once done), everything else by created on. A single column (e.g. Date sent) puts types without it last, as in the built-in timeline.</value>
+  </data>
+  <data name="SortBy_EventDate" xml:space="preserve">
+    <value>Activity date (per type)</value>
+  </data>
+  <data name="SortBy_Created" xml:space="preserve">
+    <value>Created on</value>
+  </data>
+  <data name="SortBy_Modified" xml:space="preserve">
+    <value>Last updated (modified on)</value>
+  </data>
+  <data name="SortBy_ActualEnd" xml:space="preserve">
+    <value>Actual end (completed)</value>
+  </data>
+  <data name="SortBy_DueDate" xml:space="preserve">
+    <value>Due date (scheduled end)</value>
+  </data>
+  <data name="SortBy_StartDate" xml:space="preserve">
+    <value>Start date (scheduled start)</value>
+  </data>
+  <data name="SortBy_SentOn" xml:space="preserve">
+    <value>Date sent (emails only)</value>
+  </data>
+  <data name="NotesSortBy_Name" xml:space="preserve">
+    <value>Sort notes by</value>
+  </data>
+  <data name="NotesSortBy_Description" xml:space="preserve">
+    <value>The date notes are ordered by when sorting by a single column. The built-in timeline uses Last updated. By activity date, notes use Created on.</value>
+  </data>
+  <data name="SortOrder_Name" xml:space="preserve">
+    <value>Default sort order</value>
+  </data>
+  <data name="SortOrder_Description" xml:space="preserve">
+    <value>Newest or oldest first. Users can switch in the timeline.</value>
+  </data>
+  <data name="SortOrder_Desc" xml:space="preserve">
+    <value>Newest first</value>
+  </data>
+  <data name="SortOrder_Asc" xml:space="preserve">
+    <value>Oldest first</value>
+  </data>
+  <data name="SortBy_SortDate" xml:space="preserve">
+    <value>Sort date</value>
+  </data>
+  <data name="CreateTypes_Name" xml:space="preserve">
+    <value>Types users can create</value>
+  </data>
+  <data name="CreateTypes_Description" xml:space="preserve">
+    <value>Comma-separated activity types in the New menu. Leave empty to hide it.</value>
+  </data>
+  <data name="PageSize_Name" xml:space="preserve">
+    <value>Items per page</value>
+  </data>
+  <data name="PageSize_Description" xml:space="preserve">
+    <value>How many items load at a time (5–100, default 20). Older items load as the user scrolls.</value>
+  </data>
+  <data name="Height_Name" xml:space="preserve">
+    <value>Height (px)</value>
+  </data>
+  <data name="Height_Description" xml:space="preserve">
+    <value>0 (default): the timeline grows with its content and the page scrolls, like the built-in timeline. A number: fixed height in pixels with its own scroll.</value>
+  </data>
+  <data name="Density_Name" xml:space="preserve">
+    <value>Default density</value>
+  </data>
+  <data name="Density_Description" xml:space="preserve">
+    <value>Comfortable shows previews of the content; compact shows one line per item. Users can switch.</value>
+  </data>
+  <data name="Density_Comfortable" xml:space="preserve">
+    <value>Comfortable</value>
+  </data>
+  <data name="Density_Compact" xml:space="preserve">
+    <value>Compact</value>
+  </data>
+  <data name="ShowOverview_Name" xml:space="preserve">
+    <value>Show overview</value>
+  </data>
+  <data name="ShowOverview_Description" xml:space="preserve">
+    <value>Show the summary and the activity-per-week chart above the timeline.</value>
+  </data>
+  <data name="ThreadEmails_Name" xml:space="preserve">
+    <value>Group email conversations</value>
+  </data>
+  <data name="ThreadEmails_Description" xml:space="preserve">
+    <value>Show replies and forwards with the same subject as one conversation.</value>
+  </data>
+  <data name="AdvancedConfig_Name" xml:space="preserve">
+    <value>Advanced configuration (JSON)</value>
+  </data>
+  <data name="AdvancedConfig_Description" xml:space="preserve">
+    <value>Optional JSON with preview columns, colours, icons and date rules per table, and default filters. See the component README.</value>
+  </data>
+  <data name="title" xml:space="preserve">
+    <value>Timeline</value>
+  </data>
+  <data name="newItem" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="note" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="untitled" xml:space="preserve">
+    <value>(No subject)</value>
+  </data>
+  <data name="refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="searchPlaceholder" xml:space="preserve">
+    <value>Search timeline</value>
+  </data>
+  <data name="all" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="statusLabel" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="statusAll" xml:space="preserve">
+    <value>Any status</value>
+  </data>
+  <data name="statusOpen" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="statusOverdue" xml:space="preserve">
+    <value>Overdue</value>
+  </data>
+  <data name="statusCompleted" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="dateLabel" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="dateAny" xml:space="preserve">
+    <value>Any time</value>
+  </data>
+  <data name="dateLast7" xml:space="preserve">
+    <value>Last 7 days</value>
+  </data>
+  <data name="dateLast30" xml:space="preserve">
+    <value>Last 30 days</value>
+  </data>
+  <data name="dateLast90" xml:space="preserve">
+    <value>Last 90 days</value>
+  </data>
+  <data name="onlyMine" xml:space="preserve">
+    <value>Only mine</value>
+  </data>
+  <data name="clearFilters" xml:space="preserve">
+    <value>Clear filters</value>
+  </data>
+  <data name="today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="yesterday" xml:space="preserve">
+    <value>Yesterday</value>
+  </data>
+  <data name="tomorrow" xml:space="preserve">
+    <value>Tomorrow</value>
+  </data>
+  <data name="overdueCount" xml:space="preserve">
+    <value>{0} overdue</value>
+  </data>
+  <data name="openCount" xml:space="preserve">
+    <value>{0} open</value>
+  </data>
+  <data name="noActivityYet" xml:space="preserve">
+    <value>No activity yet</value>
+  </data>
+  <data name="noActivityHint" xml:space="preserve">
+    <value>Write a note or create an activity to get started.</value>
+  </data>
+  <data name="noMatches" xml:space="preserve">
+    <value>Nothing matches these filters</value>
+  </data>
+  <data name="noMatchesHint" xml:space="preserve">
+    <value>Try another search, or clear the filters.</value>
+  </data>
+  <data name="saveRecordFirst" xml:space="preserve">
+    <value>Save the record to start its timeline</value>
+  </data>
+  <data name="loadMore" xml:space="preserve">
+    <value>Load more</value>
+  </data>
+  <data name="errorLoading" xml:space="preserve">
+    <value>Couldn't load the timeline</value>
+  </data>
+  <data name="retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="writeNote" xml:space="preserve">
+    <value>Write a note…</value>
+  </data>
+  <data name="noteTitle" xml:space="preserve">
+    <value>Title (optional)</value>
+  </data>
+  <data name="attachFile" xml:space="preserve">
+    <value>Attach file</value>
+  </data>
+  <data name="removeFile" xml:space="preserve">
+    <value>Remove file</value>
+  </data>
+  <data name="save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="openRecord" xml:space="preserve">
+    <value>Open record</value>
+  </data>
+  <data name="markComplete" xml:space="preserve">
+    <value>Mark complete</value>
+  </data>
+  <data name="copyLink" xml:space="preserve">
+    <value>Copy link</value>
+  </data>
+  <data name="linkCopied" xml:space="preserve">
+    <value>Link copied</value>
+  </data>
+  <data name="close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="previousItem" xml:space="preserve">
+    <value>Previous item</value>
+  </data>
+  <data name="nextItem" xml:space="preserve">
+    <value>Next item</value>
+  </data>
+  <data name="itemOfTotal" xml:space="preserve">
+    <value>{0} of {1}</value>
+  </data>
+  <data name="from" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="to" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="cc" xml:space="preserve">
+    <value>Cc</value>
+  </data>
+  <data name="attendees" xml:space="preserve">
+    <value>Attendees</value>
+  </data>
+  <data name="dueOn" xml:space="preserve">
+    <value>Due {0}</value>
+  </data>
+  <data name="overdueSince" xml:space="preserve">
+    <value>Overdue · due {0}</value>
+  </data>
+  <data name="startsAt" xml:space="preserve">
+    <value>Starts {0}</value>
+  </data>
+  <data name="duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="owner" xml:space="preserve">
+    <value>Owner</value>
+  </data>
+  <data name="createdBy" xml:space="preserve">
+    <value>Created by</value>
+  </data>
+  <data name="attachments" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="messages" xml:space="preserve">
+    <value>{0} messages</value>
+  </data>
+  <data name="showAllMessages" xml:space="preserve">
+    <value>Show all {0} messages</value>
+  </data>
+  <data name="showFewerMessages" xml:space="preserve">
+    <value>Show fewer</value>
+  </data>
+  <data name="showImages" xml:space="preserve">
+    <value>Show images</value>
+  </data>
+  <data name="remoteImagesBlocked" xml:space="preserve">
+    <value>Remote images are blocked to protect your privacy.</value>
+  </data>
+  <data name="details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="incoming" xml:space="preserve">
+    <value>Incoming</value>
+  </data>
+  <data name="outgoing" xml:space="preserve">
+    <value>Outgoing</value>
+  </data>
+  <data name="newBadge" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="newSinceLastVisit" xml:space="preserve">
+    <value>{0} new since your last visit</value>
+  </data>
+  <data name="rhythmLabel" xml:space="preserve">
+    <value>Activity per week</value>
+  </data>
+  <data name="rhythmWeek" xml:space="preserve">
+    <value>Week {0}</value>
+  </data>
+  <data name="rhythmNow" xml:space="preserve">
+    <value>Now</value>
+  </data>
+  <data name="rhythmHint" xml:space="preserve">
+    <value>Select a week to show only that week.</value>
+  </data>
+  <data name="noActivityThisWeek" xml:space="preserve">
+    <value>No activity</value>
+  </data>
+  <data name="completeFailed" xml:space="preserve">
+    <value>Couldn't complete the activity.</value>
+  </data>
+  <data name="noteFailed" xml:space="preserve">
+    <value>Couldn't save the note.</value>
+  </data>
+  <data name="actionFailed" xml:space="preserve">
+    <value>Something went wrong.</value>
+  </data>
+  <data name="comfortable" xml:space="preserve">
+    <value>Comfortable</value>
+  </data>
+  <data name="compact" xml:space="preserve">
+    <value>Compact</value>
+  </data>
+  <data name="viewOptions" xml:space="preserve">
+    <value>View options</value>
+  </data>
+  <data name="preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="priorityHigh" xml:space="preserve">
+    <value>High priority</value>
+  </data>
+  <data name="noContent" xml:space="preserve">
+    <value>No description</value>
+  </data>
+  <data name="configWarning" xml:space="preserve">
+    <value>Timeline configuration</value>
+  </data>
+  <data name="keyboardHint" xml:space="preserve">
+    <value>↑ ↓ to move · Enter to preview · O to open</value>
+  </data>
+  <data name="previewKeyboardHint" xml:space="preserve">
+    <value>↑ ↓ previous / next · O open · Esc close</value>
+  </data>
+  <data name="noteSaved" xml:space="preserve">
+    <value>Note saved</value>
+  </data>
+  <data name="completedToast" xml:space="preserve">
+    <value>Marked as complete</value>
+  </data>
+  <data name="loadingPreview" xml:space="preserve">
+    <value>Loading preview</value>
+  </data>
+  <data name="filterByType" xml:space="preserve">
+    <value>Filter by type</value>
+  </data>
+  <data name="filterActive" xml:space="preserve">
+    <value>{0} filters</value>
+  </data>
+  <data name="weekFilter" xml:space="preserve">
+    <value>Week {0}</value>
+  </data>
+  <data name="noteCreatedBy" xml:space="preserve">
+    <value>{0} wrote</value>
+  </data>
+  <data name="callWith" xml:space="preserve">
+    <value>Call with {0}</value>
+  </data>
+  <data name="itemsCount" xml:space="preserve">
+    <value>{0} items</value>
+  </data>
+  <data name="upcoming" xml:space="preserve">
+    <value>Upcoming</value>
+  </data>
+  <data name="moreUpcoming" xml:space="preserve">
+    <value>{0} more upcoming</value>
+  </data>
+  <data name="conversation" xml:space="preserve">
+    <value>Conversation</value>
+  </data>
+  <data name="openLatest" xml:space="preserve">
+    <value>Open latest email</value>
+  </data>
+  <data name="expandAll" xml:space="preserve">
+    <value>Expand all</value>
+  </data>
+  <data name="collapseAll" xml:space="preserve">
+    <value>Collapse</value>
+  </data>
+  <data name="filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="showQuoted" xml:space="preserve">
+    <value>Show quoted text</value>
+  </data>
+  <data name="hideQuoted" xml:space="preserve">
+    <value>Hide quoted text</value>
+  </data>
+  <data name="sortBy" xml:space="preserve">
+    <value>Sort by</value>
+  </data>
+  <data name="sortEvent" xml:space="preserve">
+    <value>Activity date</value>
+  </data>
+  <data name="sortCreated" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="sortModified" xml:space="preserve">
+    <value>Last updated</value>
+  </data>
+  <data name="sortActualEnd" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="sortDue" xml:space="preserve">
+    <value>Due date</value>
+  </data>
+  <data name="sortStart" xml:space="preserve">
+    <value>Start date</value>
+  </data>
+  <data name="sortSent" xml:space="preserve">
+    <value>Date sent</value>
+  </data>
+  <data name="sortSortDate" xml:space="preserve">
+    <value>Sort date</value>
+  </data>
+  <data name="newestFirst" xml:space="preserve">
+    <value>Newest first</value>
+  </data>
+  <data name="oldestFirst" xml:space="preserve">
+    <value>Oldest first</value>
+  </data>
+  <data name="verbUpdated" xml:space="preserve">
+    <value>Updated</value>
+  </data>
+  <data name="verbCompleted" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="verbDue" xml:space="preserve">
+    <value>Due</value>
+  </data>
+  <data name="verbStarts" xml:space="preserve">
+    <value>Starts</value>
+  </data>
+  <data name="verbSent" xml:space="preserve">
+    <value>Sent</value>
+  </data>
+  <data name="createdAt" xml:space="preserve">
+    <value>Created {0}</value>
+  </data>
+  <data name="updatedAt" xml:space="preserve">
+    <value>Last updated {0}</value>
+  </data>
+  <data name="completedAt" xml:space="preserve">
+    <value>Completed {0}</value>
+  </data>
+  <data name="canceledAt" xml:space="preserve">
+    <value>Canceled {0}</value>
+  </data>
+  <data name="sentAt" xml:space="preserve">
+    <value>Sent {0}</value>
+  </data>
+  <data name="receivedAt" xml:space="preserve">
+    <value>Received {0}</value>
+  </data>
+  <data name="wasDue" xml:space="preserve">
+    <value>Due date was {0}</value>
+  </data>
+  <data name="with" xml:space="preserve">
+    <value>With</value>
+  </data>
+  <data name="dueLabel" xml:space="preserve">
+    <value>Due date</value>
+  </data>
+  <data name="detailCreated" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="detailUpdated" xml:space="preserve">
+    <value>Last updated</value>
+  </data>
+  <data name="byPerson" xml:space="preserve">
+    <value>{0} by {1}</value>
+  </data>
+</root>

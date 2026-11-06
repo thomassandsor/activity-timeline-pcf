@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Control_Name" xml:space="preserve">
+    <value>Aktivitetstidslinje</value>
+  </data>
+  <data name="Control_Description" xml:space="preserve">
+    <value>En konfigurerbar tidslinje med aktiviteter och anteckningar för alla tabeller, med förhandsgranskning, filter och aktivitetsöversikt.</value>
+  </data>
+  <data name="Anchor_Name" xml:space="preserve">
+    <value>Värdkolumn</value>
+  </data>
+  <data name="Anchor_Description" xml:space="preserve">
+    <value>Valfri kolumn i formuläret. Tidslinjen varken läser eller ändrar den.</value>
+  </data>
+  <data name="ActivityTypes_Name" xml:space="preserve">
+    <value>Aktivitetstyper</value>
+  </data>
+  <data name="ActivityTypes_Description" xml:space="preserve">
+    <value>Kommaavgränsade logiska namn, t.ex. email,phonecall,task,appointment,new_message. Använd * för alla aktivitetstyper.</value>
+  </data>
+  <data name="IncludeNotes_Name" xml:space="preserve">
+    <value>Visa anteckningar</value>
+  </data>
+  <data name="IncludeNotes_Description" xml:space="preserve">
+    <value>Visa anteckningar och bifogade filer på posten och låt användare skriva anteckningar.</value>
+  </data>
+  <data name="Option_Yes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="Option_No" xml:space="preserve">
+    <value>Nej</value>
+  </data>
+  <data name="RelatedScope_Name" xml:space="preserve">
+    <value>Relaterade aktiviteter</value>
+  </data>
+  <data name="RelatedScope_Description" xml:space="preserve">
+    <value>Bara aktiviteter angående posten, eller även aktiviteter där posten är avsändare, mottagare eller deltagare.</value>
+  </data>
+  <data name="RelatedScope_Regarding" xml:space="preserve">
+    <value>Angående posten</value>
+  </data>
+  <data name="RelatedScope_Parties" xml:space="preserve">
+    <value>Angående eller deltagare</value>
+  </data>
+  <data name="SortBy_Name" xml:space="preserve">
+    <value>Sortera efter</value>
+  </data>
+  <data name="SortBy_Description" xml:space="preserve">
+    <value>Datumet som tidslinjen sorteras och grupperas efter. Aktivitetsdatum (standard) använder det datum som är relevant per typ: möten efter start, uppgifter och samtal efter förfallodatum (slutfört datum när de är klara), allt annat efter skapad. En enskild kolumn (t.ex. Skickat datum) lägger typer utan den sist, som i den inbyggda tidslinjen.</value>
+  </data>
+  <data name="SortBy_EventDate" xml:space="preserve">
+    <value>Aktivitetsdatum (per typ)</value>
+  </data>
+  <data name="SortBy_Created" xml:space="preserve">
+    <value>Skapad</value>
+  </data>
+  <data name="SortBy_Modified" xml:space="preserve">
+    <value>Senast uppdaterad (ändrad)</value>
+  </data>
+  <data name="SortBy_ActualEnd" xml:space="preserve">
+    <value>Faktiskt slut (slutförd)</value>
+  </data>
+  <data name="SortBy_DueDate" xml:space="preserve">
+    <value>Förfallodatum (planerat slut)</value>
+  </data>
+  <data name="SortBy_StartDate" xml:space="preserve">
+    <value>Startdatum (planerad start)</value>
+  </data>
+  <data name="SortBy_SentOn" xml:space="preserve">
+    <value>Skickat datum (bara e-post)</value>
+  </data>
+  <data name="NotesSortBy_Name" xml:space="preserve">
+    <value>Sortera anteckningar efter</value>
+  </data>
+  <data name="NotesSortBy_Description" xml:space="preserve">
+    <value>Datumet som anteckningar sorteras efter vid sortering på en enskild kolumn. Den inbyggda tidslinjen använder Senast uppdaterad. Efter aktivitetsdatum använder anteckningar Skapad.</value>
+  </data>
+  <data name="SortOrder_Name" xml:space="preserve">
+    <value>Standardsorteringsordning</value>
+  </data>
+  <data name="SortOrder_Description" xml:space="preserve">
+    <value>Nyaste eller äldsta först. Användare kan byta i tidslinjen.</value>
+  </data>
+  <data name="SortOrder_Desc" xml:space="preserve">
+    <value>Nyaste först</value>
+  </data>
+  <data name="SortOrder_Asc" xml:space="preserve">
+    <value>Äldsta först</value>
+  </data>
+  <data name="SortBy_SortDate" xml:space="preserve">
+    <value>Sorteringsdatum</value>
+  </data>
+  <data name="CreateTypes_Name" xml:space="preserve">
+    <value>Typer som användare kan skapa</value>
+  </data>
+  <data name="CreateTypes_Description" xml:space="preserve">
+    <value>Kommaavgränsade aktivitetstyper i Ny-menyn. Lämna tomt för att dölja den.</value>
+  </data>
+  <data name="PageSize_Name" xml:space="preserve">
+    <value>Objekt per sida</value>
+  </data>
+  <data name="PageSize_Description" xml:space="preserve">
+    <value>Hur många objekt som läses in åt gången (5–100, standard 20). Äldre objekt läses in när användaren rullar.</value>
+  </data>
+  <data name="Height_Name" xml:space="preserve">
+    <value>Höjd (px)</value>
+  </data>
+  <data name="Height_Description" xml:space="preserve">
+    <value>0 (standard): tidslinjen växer med innehållet och sidan rullar, som den inbyggda tidslinjen. Ett tal: fast höjd i pixlar med egen rullning.</value>
+  </data>
+  <data name="Density_Name" xml:space="preserve">
+    <value>Standardtäthet</value>
+  </data>
+  <data name="Density_Description" xml:space="preserve">
+    <value>Bekväm visar utdrag ur innehållet; kompakt visar en rad per objekt. Användare kan byta.</value>
+  </data>
+  <data name="Density_Comfortable" xml:space="preserve">
+    <value>Bekväm</value>
+  </data>
+  <data name="Density_Compact" xml:space="preserve">
+    <value>Kompakt</value>
+  </data>
+  <data name="ShowOverview_Name" xml:space="preserve">
+    <value>Visa översikt</value>
+  </data>
+  <data name="ShowOverview_Description" xml:space="preserve">
+    <value>Visa sammanfattningen och diagrammet över aktivitet per vecka ovanför tidslinjen.</value>
+  </data>
+  <data name="ThreadEmails_Name" xml:space="preserve">
+    <value>Gruppera e-postkonversationer</value>
+  </data>
+  <data name="ThreadEmails_Description" xml:space="preserve">
+    <value>Visa svar och vidarebefordringar med samma ämne som en konversation.</value>
+  </data>
+  <data name="AdvancedConfig_Name" xml:space="preserve">
+    <value>Avancerad konfiguration (JSON)</value>
+  </data>
+  <data name="AdvancedConfig_Description" xml:space="preserve">
+    <value>Valfri JSON med förhandsgranskningskolumner, färger, ikoner och datumregler per tabell, samt standardfilter. Se komponentens README.</value>
+  </data>
+  <data name="title" xml:space="preserve">
+    <value>Tidslinje</value>
+  </data>
+  <data name="newItem" xml:space="preserve">
+    <value>Ny</value>
+  </data>
+  <data name="note" xml:space="preserve">
+    <value>Anteckning</value>
+  </data>
+  <data name="untitled" xml:space="preserve">
+    <value>(Inget ämne)</value>
+  </data>
+  <data name="refresh" xml:space="preserve">
+    <value>Uppdatera</value>
+  </data>
+  <data name="searchPlaceholder" xml:space="preserve">
+    <value>Sök i tidslinjen</value>
+  </data>
+  <data name="all" xml:space="preserve">
+    <value>Alla</value>
+  </data>
+  <data name="statusLabel" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="statusAll" xml:space="preserve">
+    <value>Alla statusar</value>
+  </data>
+  <data name="statusOpen" xml:space="preserve">
+    <value>Öppen</value>
+  </data>
+  <data name="statusOverdue" xml:space="preserve">
+    <value>Försenad</value>
+  </data>
+  <data name="statusCompleted" xml:space="preserve">
+    <value>Slutförd</value>
+  </data>
+  <data name="dateLabel" xml:space="preserve">
+    <value>Datum</value>
+  </data>
+  <data name="dateAny" xml:space="preserve">
+    <value>När som helst</value>
+  </data>
+  <data name="dateLast7" xml:space="preserve">
+    <value>Senaste 7 dagarna</value>
+  </data>
+  <data name="dateLast30" xml:space="preserve">
+    <value>Senaste 30 dagarna</value>
+  </data>
+  <data name="dateLast90" xml:space="preserve">
+    <value>Senaste 90 dagarna</value>
+  </data>
+  <data name="onlyMine" xml:space="preserve">
+    <value>Bara mina</value>
+  </data>
+  <data name="clearFilters" xml:space="preserve">
+    <value>Rensa filter</value>
+  </data>
+  <data name="today" xml:space="preserve">
+    <value>I dag</value>
+  </data>
+  <data name="yesterday" xml:space="preserve">
+    <value>I går</value>
+  </data>
+  <data name="tomorrow" xml:space="preserve">
+    <value>I morgon</value>
+  </data>
+  <data name="overdueCount" xml:space="preserve">
+    <value>{0} försenade</value>
+  </data>
+  <data name="openCount" xml:space="preserve">
+    <value>{0} öppna</value>
+  </data>
+  <data name="noActivityYet" xml:space="preserve">
+    <value>Ingen aktivitet än</value>
+  </data>
+  <data name="noActivityHint" xml:space="preserve">
+    <value>Skriv en anteckning eller skapa en aktivitet för att komma igång.</value>
+  </data>
+  <data name="noMatches" xml:space="preserve">
+    <value>Inget matchar filtren</value>
+  </data>
+  <data name="noMatchesHint" xml:space="preserve">
+    <value>Prova en annan sökning eller rensa filtren.</value>
+  </data>
+  <data name="saveRecordFirst" xml:space="preserve">
+    <value>Spara posten för att starta tidslinjen</value>
+  </data>
+  <data name="loadMore" xml:space="preserve">
+    <value>Läs in fler</value>
+  </data>
+  <data name="errorLoading" xml:space="preserve">
+    <value>Det gick inte att läsa in tidslinjen</value>
+  </data>
+  <data name="retry" xml:space="preserve">
+    <value>Försök igen</value>
+  </data>
+  <data name="writeNote" xml:space="preserve">
+    <value>Skriv en anteckning…</value>
+  </data>
+  <data name="noteTitle" xml:space="preserve">
+    <value>Rubrik (valfritt)</value>
+  </data>
+  <data name="attachFile" xml:space="preserve">
+    <value>Bifoga fil</value>
+  </data>
+  <data name="removeFile" xml:space="preserve">
+    <value>Ta bort fil</value>
+  </data>
+  <data name="save" xml:space="preserve">
+    <value>Spara</value>
+  </data>
+  <data name="cancel" xml:space="preserve">
+    <value>Avbryt</value>
+  </data>
+  <data name="openRecord" xml:space="preserve">
+    <value>Öppna post</value>
+  </data>
+  <data name="markComplete" xml:space="preserve">
+    <value>Markera som slutförd</value>
+  </data>
+  <data name="copyLink" xml:space="preserve">
+    <value>Kopiera länk</value>
+  </data>
+  <data name="linkCopied" xml:space="preserve">
+    <value>Länken har kopierats</value>
+  </data>
+  <data name="close" xml:space="preserve">
+    <value>Stäng</value>
+  </data>
+  <data name="previousItem" xml:space="preserve">
+    <value>Föregående objekt</value>
+  </data>
+  <data name="nextItem" xml:space="preserve">
+    <value>Nästa objekt</value>
+  </data>
+  <data name="itemOfTotal" xml:space="preserve">
+    <value>{0} av {1}</value>
+  </data>
+  <data name="from" xml:space="preserve">
+    <value>Från</value>
+  </data>
+  <data name="to" xml:space="preserve">
+    <value>Till</value>
+  </data>
+  <data name="cc" xml:space="preserve">
+    <value>Kopia</value>
+  </data>
+  <data name="attendees" xml:space="preserve">
+    <value>Deltagare</value>
+  </data>
+  <data name="dueOn" xml:space="preserve">
+    <value>Förfaller {0}</value>
+  </data>
+  <data name="overdueSince" xml:space="preserve">
+    <value>Försenad · förföll {0}</value>
+  </data>
+  <data name="startsAt" xml:space="preserve">
+    <value>Börjar {0}</value>
+  </data>
+  <data name="duration" xml:space="preserve">
+    <value>Varaktighet</value>
+  </data>
+  <data name="owner" xml:space="preserve">
+    <value>Ägare</value>
+  </data>
+  <data name="createdBy" xml:space="preserve">
+    <value>Skapad av</value>
+  </data>
+  <data name="attachments" xml:space="preserve">
+    <value>Bifogade filer</value>
+  </data>
+  <data name="download" xml:space="preserve">
+    <value>Ladda ned</value>
+  </data>
+  <data name="messages" xml:space="preserve">
+    <value>{0} meddelanden</value>
+  </data>
+  <data name="showAllMessages" xml:space="preserve">
+    <value>Visa alla {0} meddelanden</value>
+  </data>
+  <data name="showFewerMessages" xml:space="preserve">
+    <value>Visa färre</value>
+  </data>
+  <data name="showImages" xml:space="preserve">
+    <value>Visa bilder</value>
+  </data>
+  <data name="remoteImagesBlocked" xml:space="preserve">
+    <value>Externa bilder blockeras för att skydda din integritet.</value>
+  </data>
+  <data name="details" xml:space="preserve">
+    <value>Detaljer</value>
+  </data>
+  <data name="incoming" xml:space="preserve">
+    <value>Inkommande</value>
+  </data>
+  <data name="outgoing" xml:space="preserve">
+    <value>Utgående</value>
+  </data>
+  <data name="newBadge" xml:space="preserve">
+    <value>Ny</value>
+  </data>
+  <data name="newSinceLastVisit" xml:space="preserve">
+    <value>{0} nya sedan ditt senaste besök</value>
+  </data>
+  <data name="rhythmLabel" xml:space="preserve">
+    <value>Aktivitet per vecka</value>
+  </data>
+  <data name="rhythmWeek" xml:space="preserve">
+    <value>Vecka {0}</value>
+  </data>
+  <data name="rhythmNow" xml:space="preserve">
+    <value>Nu</value>
+  </data>
+  <data name="rhythmHint" xml:space="preserve">
+    <value>Välj en vecka för att bara visa den veckan.</value>
+  </data>
+  <data name="noActivityThisWeek" xml:space="preserve">
+    <value>Ingen aktivitet</value>
+  </data>
+  <data name="completeFailed" xml:space="preserve">
+    <value>Det gick inte att slutföra aktiviteten.</value>
+  </data>
+  <data name="noteFailed" xml:space="preserve">
+    <value>Det gick inte att spara anteckningen.</value>
+  </data>
+  <data name="actionFailed" xml:space="preserve">
+    <value>Något gick fel.</value>
+  </data>
+  <data name="comfortable" xml:space="preserve">
+    <value>Bekväm</value>
+  </data>
+  <data name="compact" xml:space="preserve">
+    <value>Kompakt</value>
+  </data>
+  <data name="viewOptions" xml:space="preserve">
+    <value>Visningsalternativ</value>
+  </data>
+  <data name="preview" xml:space="preserve">
+    <value>Förhandsgranska</value>
+  </data>
+  <data name="priorityHigh" xml:space="preserve">
+    <value>Hög prioritet</value>
+  </data>
+  <data name="noContent" xml:space="preserve">
+    <value>Ingen beskrivning</value>
+  </data>
+  <data name="configWarning" xml:space="preserve">
+    <value>Konfiguration av tidslinjen</value>
+  </data>
+  <data name="keyboardHint" xml:space="preserve">
+    <value>↑ ↓ för att flytta · Enter för att förhandsgranska · O för att öppna</value>
+  </data>
+  <data name="previewKeyboardHint" xml:space="preserve">
+    <value>↑ ↓ föregående / nästa · O öppna · Esc stäng</value>
+  </data>
+  <data name="noteSaved" xml:space="preserve">
+    <value>Anteckningen har sparats</value>
+  </data>
+  <data name="completedToast" xml:space="preserve">
+    <value>Markerad som slutförd</value>
+  </data>
+  <data name="loadingPreview" xml:space="preserve">
+    <value>Läser in förhandsgranskning</value>
+  </data>
+  <data name="filterByType" xml:space="preserve">
+    <value>Filtrera efter typ</value>
+  </data>
+  <data name="filterActive" xml:space="preserve">
+    <value>{0} filter</value>
+  </data>
+  <data name="weekFilter" xml:space="preserve">
+    <value>Vecka {0}</value>
+  </data>
+  <data name="noteCreatedBy" xml:space="preserve">
+    <value>{0} skrev</value>
+  </data>
+  <data name="callWith" xml:space="preserve">
+    <value>Samtal med {0}</value>
+  </data>
+  <data name="itemsCount" xml:space="preserve">
+    <value>{0} objekt</value>
+  </data>
+  <data name="upcoming" xml:space="preserve">
+    <value>Kommande</value>
+  </data>
+  <data name="moreUpcoming" xml:space="preserve">
+    <value>{0} fler kommande</value>
+  </data>
+  <data name="conversation" xml:space="preserve">
+    <value>Konversation</value>
+  </data>
+  <data name="openLatest" xml:space="preserve">
+    <value>Öppna senaste e-postmeddelandet</value>
+  </data>
+  <data name="expandAll" xml:space="preserve">
+    <value>Visa alla</value>
+  </data>
+  <data name="collapseAll" xml:space="preserve">
+    <value>Dölj</value>
+  </data>
+  <data name="filter" xml:space="preserve">
+    <value>Filtrera</value>
+  </data>
+  <data name="search" xml:space="preserve">
+    <value>Sök</value>
+  </data>
+  <data name="showQuoted" xml:space="preserve">
+    <value>Visa citerad text</value>
+  </data>
+  <data name="hideQuoted" xml:space="preserve">
+    <value>Dölj citerad text</value>
+  </data>
+  <data name="sortBy" xml:space="preserve">
+    <value>Sortera efter</value>
+  </data>
+  <data name="sortEvent" xml:space="preserve">
+    <value>Aktivitetsdatum</value>
+  </data>
+  <data name="sortCreated" xml:space="preserve">
+    <value>Skapad</value>
+  </data>
+  <data name="sortModified" xml:space="preserve">
+    <value>Senast uppdaterad</value>
+  </data>
+  <data name="sortActualEnd" xml:space="preserve">
+    <value>Slutförd</value>
+  </data>
+  <data name="sortDue" xml:space="preserve">
+    <value>Förfallodatum</value>
+  </data>
+  <data name="sortStart" xml:space="preserve">
+    <value>Startdatum</value>
+  </data>
+  <data name="sortSent" xml:space="preserve">
+    <value>Skickat datum</value>
+  </data>
+  <data name="sortSortDate" xml:space="preserve">
+    <value>Sorteringsdatum</value>
+  </data>
+  <data name="newestFirst" xml:space="preserve">
+    <value>Nyaste först</value>
+  </data>
+  <data name="oldestFirst" xml:space="preserve">
+    <value>Äldsta först</value>
+  </data>
+  <data name="verbUpdated" xml:space="preserve">
+    <value>Uppdaterad</value>
+  </data>
+  <data name="verbCompleted" xml:space="preserve">
+    <value>Slutförd</value>
+  </data>
+  <data name="verbDue" xml:space="preserve">
+    <value>Förfaller</value>
+  </data>
+  <data name="verbStarts" xml:space="preserve">
+    <value>Börjar</value>
+  </data>
+  <data name="verbSent" xml:space="preserve">
+    <value>Skickad</value>
+  </data>
+  <data name="createdAt" xml:space="preserve">
+    <value>Skapad {0}</value>
+  </data>
+  <data name="updatedAt" xml:space="preserve">
+    <value>Senast uppdaterad {0}</value>
+  </data>
+  <data name="completedAt" xml:space="preserve">
+    <value>Slutförd {0}</value>
+  </data>
+  <data name="canceledAt" xml:space="preserve">
+    <value>Avbruten {0}</value>
+  </data>
+  <data name="sentAt" xml:space="preserve">
+    <value>Skickad {0}</value>
+  </data>
+  <data name="receivedAt" xml:space="preserve">
+    <value>Mottagen {0}</value>
+  </data>
+  <data name="wasDue" xml:space="preserve">
+    <value>Förfallodatumet var {0}</value>
+  </data>
+  <data name="with" xml:space="preserve">
+    <value>Med</value>
+  </data>
+  <data name="dueLabel" xml:space="preserve">
+    <value>Förfallodatum</value>
+  </data>
+  <data name="detailCreated" xml:space="preserve">
+    <value>Skapad</value>
+  </data>
+  <data name="detailUpdated" xml:space="preserve">
+    <value>Senast uppdaterad</value>
+  </data>
+  <data name="byPerson" xml:space="preserve">
+    <value>{0} av {1}</value>
+  </data>
+</root>
