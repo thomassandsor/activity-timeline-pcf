@@ -1,21 +1,24 @@
 import { IInputs } from "../generated/ManifestTypes";
-import { canComplete, completedStatus, dateRule, eventDate, previewColumns, ruledTypes } from "../model/activityTypes";
+import { canComplete, canEdit, dateRule, eventDate, mapPriority, mapState, previewColumns, quickEdit, ruledTypes, withStatusDetails } from "../model/activityTypes";
 import { allowsAllTypes, DateRule, FeedSort, SortColumn, SortOrder, TimelineConfig } from "../model/config";
 import { DateEnv, formatFull } from "../model/dates";
+import { applyChanges } from "../model/edit";
+import { compareByDate, isOpenState } from "../model/feed";
 import { looksLikeHtml, makeSnippet, noteHeading, threadKeyFor } from "../model/html";
 import {
-    ActivityTypeInfo, AttachmentRef, Counts, ItemDetails, ItemState, PartyRef, PreviewField, RecordContext, RhythmRow,
-    TimelineFilters, TimelineItem,
+    ActivityTypeInfo, AttachmentRef, Counts, EditValues, ItemChanges, ItemDetails, ItemState, PartyRef, StatusOption, PreviewField, RecordContext,
+    StateLabels, TimelineFilters, TimelineItem,
 } from "../model/types";
-import { FeedPagers, FileContent, HydratingPager, MergedPager, NewNote, Stream, StreamPage, TimelineDataSource } from "./dataSource";
+import { FeedPagers, FileContent, HydratingPager, MergedPager, NewNote, SearchHits, SearchPager, Stream, StreamPage, TimelineDataSource } from "./dataSource";
 
 type Row = Record<string, unknown>;
 
 const FORMATTED = "@OData.Community.Display.V1.FormattedValue";
 const LOOKUP_TYPE = "@Microsoft.Dynamics.CRM.lookuplogicalname";
-const RHYTHM_LIMIT = 5000;
 /** Item ids per details query; keeps the URL well within limits */
 const DETAILS_CHUNK = 25;
+/** The real form opens at the width of the preview it replaces */
+const PREVIEW_WIDTH = 560;
 
 /** What the feed queries load: enough to place, sort and label an item. Bodies and participants follow for shown items only. */
 const LIGHT_SELECT = [
@@ -25,6 +28,8 @@ const LIGHT_SELECT = [
 ].join(",");
 const PARTY_EXPAND = "activitypointer_activity_parties($select=participationtypemask,_partyid_value,addressused)";
 const NOTE_SELECT = "annotationid,subject,notetext,filename,filesize,mimetype,isdocument,createdon,modifiedon,_createdby_value,_ownerid_value";
+/** When sorting by activity date, an activity can sit at any of these */
+const EVENT_DATE_COLUMNS: SortColumn[] = ["createdon", "scheduledstart", "scheduledend", "actualend"];
 
 // --- value helpers ----------------------------------------------------------------------------------------
 
@@ -61,6 +66,11 @@ function normalizeId(id: string): string {
 
 function odataString(value: string): string {
     return `'${value.replace(/'/g, "''")}'`;
+}
+
+/** A search term as an OData string: wildcard characters match literally, and it's encoded because options go into the URL as they are */
+function searchLiteral(term: string): string {
+    return encodeURIComponent(odataString(term.trim().replace(/[%_[]/g, "[$&]")));
 }
 
 function xmlValue(value: string): string {
@@ -114,22 +124,6 @@ const SYSTEM_TYPE_CODES: Record<number, string> = {
     4251: "recurringappointmentmaster", 4401: "campaignresponse", 4402: "campaignactivity", 4406: "bulkoperation",
 };
 
-function mapState(statecode: number | undefined): ItemState {
-    switch (statecode) {
-        case 1: return "completed";
-        case 2: return "canceled";
-        case 3: return "scheduled";
-        default: return "open";
-    }
-}
-
-function mapPriority(code: number | undefined): TimelineItem["priority"] {
-    if (code === 0) return "low";
-    if (code === 2) return "high";
-    if (code === 1) return "normal";
-    return undefined;
-}
-
 const INTERNAL_PARTY_TYPES = new Set(["systemuser", "queue", "team"]);
 
 interface MetadataAttribute {
@@ -138,6 +132,8 @@ interface MetadataAttribute {
     OptionSet?: Record<string, { text?: string } | undefined>;
     AttributeType?: number | string;
     AttributeTypeName?: { value?: string };
+    /** Status reasons with their states. Not in the public typings; without it the status can't be changed from here. */
+    attributeDescriptor?: { OptionSet?: { Label?: string; Value?: number; State?: number; IsHidden?: boolean }[] };
 }
 
 interface MetadataLike {
@@ -153,6 +149,10 @@ function isLookupAttribute(attr: MetadataAttribute | undefined): boolean {
     if (t === 1 || t === 6 || t === 9 || t === "Lookup" || t === "Customer" || t === "Owner") return true;
     const name = attr.AttributeTypeName?.value;
     return name === "LookupType" || name === "CustomerType" || name === "OwnerType";
+}
+
+interface XrmWindow {
+    Xrm?: { Navigation?: { navigateTo?: (page: Record<string, unknown>, options: Record<string, unknown>) => Promise<unknown> } };
 }
 
 export class DataverseDataSource implements TimelineDataSource {
@@ -207,9 +207,6 @@ export class DataverseDataSource implements TimelineDataSource {
         if (f.kind === "last") {
             const now = this.env.now();
             return [`${column} ge ${new Date(now.getTime() - f.days * 86400000).toISOString()}`, `${column} le ${now.toISOString()}`];
-        }
-        if (f.kind === "range") {
-            return [`${column} ge ${f.from.toISOString()}`, `${column} lt ${f.to.toISOString()}`];
         }
         return [];
     }
@@ -451,11 +448,15 @@ export class DataverseDataSource implements TimelineDataSource {
     }
 
     public openFeed(filters: TimelineFilters, sort: FeedSort): FeedPagers {
+        const hydrate = (items: TimelineItem[]) => this.hydrate(items);
+        if (filters.search.trim()) {
+            return { history: new HydratingPager(new SearchPager(() => this.search(filters, sort)), hydrate) };
+        }
+
         const types = this.activityTypes(filters);
         const withUpcoming = sort.activities === "eventdate" && sort.order === "desc";
         const slices = types && types.length === 0 ? { history: [], upcoming: [] } : this.feedSlices(types, sort, withUpcoming);
         const stream = (slice: Slice, order: SortOrder): Stream => ({ fetch: (cursor) => this.fetchSlice(filters, slice, sort, order, cursor) });
-        const hydrate = (items: TimelineItem[]) => this.hydrate(items);
 
         const history = slices.history.filter((s) => this.sliceAllowed(s, filters)).map((s) => stream(s, sort.order));
         if (this.notesWanted(filters)) {
@@ -475,8 +476,6 @@ export class DataverseDataSource implements TimelineDataSource {
         const build = () => {
             const conditions = [this.scopeFilter(), slice.condition, ...this.dateFilter(filters, slice.column), this.statusCondition(filters)];
             if (filters.onlyMine && this.currentUserId) conditions.push(`_ownerid_value eq ${this.currentUserId}`);
-            const q = filters.search.trim();
-            if (q) conditions.push(`(contains(subject,${odataString(q)}) or contains(description,${odataString(q)}))`);
             // Like the built-in timeline: with a single sort column, activities without a value in it end up last
             return `?$select=${LIGHT_SELECT}&$filter=${conditions.filter(Boolean).join(" and ")}&$orderby=${slice.column} ${order},activityid ${order}`;
         };
@@ -486,19 +485,82 @@ export class DataverseDataSource implements TimelineDataSource {
         return { items: (result.entities as Row[]).map((r) => this.mapActivity(r, sort.activities)), next: nextOptions(result.nextLink) };
     }
 
+    private notesQuery(filters: TimelineFilters, column: string, order: SortOrder, extra: string[] = []): string {
+        const conditions = [`_objectid_value eq ${normalizeId(this.record.id)}`, ...this.dateFilter(filters, column), ...extra];
+        if (filters.onlyMine && this.currentUserId) conditions.push(`_ownerid_value eq ${this.currentUserId}`);
+        return `?$select=${NOTE_SELECT}&$filter=${conditions.join(" and ")}&$orderby=${column} ${order},annotationid ${order}`;
+    }
+
     private async fetchNotes(filters: TimelineFilters, column: string, order: SortOrder, cursor: string | undefined): Promise<StreamPage> {
         let options = cursor;
         if (!options) {
             const states = await this.typeStates(false);
             if (states && states.notes === 0) return { items: [] };
-            const conditions = [`_objectid_value eq ${normalizeId(this.record.id)}`, ...this.dateFilter(filters, column)];
-            if (filters.onlyMine && this.currentUserId) conditions.push(`_ownerid_value eq ${this.currentUserId}`);
-            const q = filters.search.trim();
-            if (q) conditions.push(`(contains(subject,${odataString(q)}) or contains(notetext,${odataString(q)}) or contains(filename,${odataString(q)}))`);
-            options = `?$select=${NOTE_SELECT}&$filter=${conditions.join(" and ")}&$orderby=${column} ${order},annotationid ${order}`;
+            options = this.notesQuery(filters, column, order);
         }
         const result = await this.context.webAPI.retrieveMultipleRecords("annotation", options, this.config.pageSize);
         return { items: (result.entities as Row[]).map((r) => this.mapNote(r, column)), next: nextOptions(result.nextLink) };
+    }
+
+    // --- search -------------------------------------------------------------------------------------------
+
+    /**
+     * Searches titles and content with one query over activities and one over notes, however the feed is sorted:
+     * wildcards on body text are the most expensive conditions the control uses. Only the newest activities are
+     * looked through (searchLimit), and notes from the same period.
+     */
+    private async search(filters: TimelineFilters, sort: FeedSort): Promise<SearchHits> {
+        const term = searchLiteral(filters.search);
+        const limit = this.config.searchLimit;
+        const types = this.activityTypes(filters);
+        const event = sort.activities === "eventdate";
+        const scope = () => allOf([
+            this.scopeFilter(),
+            types ? typeIn(types) : undefined,
+            filters.date.kind === "any" ? undefined : anyOf((event ? EVENT_DATE_COLUMNS : [sort.activities]).map((c) => allOf(this.dateFilter(filters, c)))),
+            this.statusCondition(filters),
+            filters.onlyMine && this.currentUserId ? `_ownerid_value eq ${this.currentUserId}` : undefined,
+        ]);
+
+        const hasActivities = (!types || types.length > 0) && (await this.sliceHasRows({ column: "createdon", states: "any", types }));
+        const from = hasActivities ? await this.searchStart(scope, limit) : undefined;
+        const since = from ? `createdon ge ${from.toISOString()}` : undefined;
+
+        const searchActivities = async () => {
+            if (!hasActivities) return [];
+            const build = () => `?$select=${LIGHT_SELECT}&$filter=${allOf([scope(), since, `(contains(subject,${term}) or contains(description,${term}))`])}&$orderby=createdon desc,activityid desc`;
+            return ((await this.queryActivities(build, limit)).entities as Row[]).map((r) => this.mapActivity(r, sort.activities));
+        };
+        const searchNotes = async () => {
+            if (!this.notesWanted(filters) || (await this.typeStates(false))?.notes === 0) return [];
+            const column = event ? "createdon" : sort.notes;
+            const contains = `(contains(subject,${term}) or contains(notetext,${term}) or contains(filename,${term}))`;
+            const result = await this.context.webAPI.retrieveMultipleRecords("annotation", this.notesQuery(filters, column, "desc", since ? [contains, since] : [contains]), limit);
+            return (result.entities as Row[]).map((r) => this.mapNote(r, column));
+        };
+
+        const [activities, notes] = await Promise.all([searchActivities(), searchNotes()]);
+        // By activity date the query asked for any date in the window; keep the ones placed there
+        const items = [...activities, ...notes].filter((i) => this.inDateFilter(filters, i.date)).sort(compareByDate(sort.order));
+        return { items, limit: from ? { count: limit, from } : undefined };
+    }
+
+    /** Created-on date of the oldest activity a search reaches; undefined when they all fit within the limit */
+    private async searchStart(scope: () => string | undefined, limit: number): Promise<Date | undefined> {
+        const states = await this.typeStates(false);
+        if (states?.complete && (!this.useParties || states.withParties) && states.rows.reduce((n, r) => n + r.count, 0) <= limit) return undefined;
+        const result = await this.queryActivities(() => `?$select=createdon&$filter=${scope()}&$orderby=createdon desc`, limit);
+        const last = result.entities[result.entities.length - 1] as Row | undefined;
+        return result.nextLink && last ? date(last, "createdon") : undefined;
+    }
+
+    private inDateFilter(filters: TimelineFilters, value: Date): boolean {
+        const f = filters.date;
+        if (f.kind === "last") {
+            const now = this.env.now().getTime();
+            return value.getTime() >= now - f.days * 86400000 && value.getTime() <= now;
+        }
+        return true;
     }
 
     /** Bodies, participants and attachment counts for activities about to be shown: one query per 25 items */
@@ -522,19 +584,19 @@ export class DataverseDataSource implements TimelineDataSource {
                 }
             }),
             this.addAttachmentCounts(activities),
-            this.addStatusLabels(activities),
+            this.addStatusDetails(activities),
         ]);
     }
 
-    /** Status reason labels from each activity table's own metadata, cached per table */
-    private async addStatusLabels(items: TimelineItem[]): Promise<void> {
-        const entities = Array.from(new Set(items.filter((i) => i.statusCode !== undefined).map((i) => i.entity)));
-        const labels = new Map<string, MetadataAttribute | undefined>();
-        await Promise.all(entities.map(async (e) => labels.set(e, (await this.metadata(e, ["statuscode"]))?.Attributes?.get?.("statuscode"))));
-        for (const item of items) {
-            const text = item.statusCode !== undefined ? labels.get(item.entity)?.OptionSet?.[String(item.statusCode)]?.text : undefined;
-            if (text) item.statusLabel = text;
-        }
+    /** The status reason beside the word on open items, from their table's metadata, cached per table */
+    private async addStatusDetails(items: TimelineItem[]): Promise<void> {
+        const open = items.filter((i) => isOpenState(i.state) && i.statusCode !== undefined);
+        if (open.length === 0) return;
+        const words = await this.getStateLabels();
+        const entities = Array.from(new Set(open.map((i) => i.entity)));
+        const options = new Map<string, StatusOption[]>();
+        await Promise.all(entities.map(async (e) => options.set(e, withStatusDetails(statusOptions(await this.metadata(e, ["statuscode"])), words))));
+        for (const item of open) item.statusDetail = options.get(item.entity)?.find((s) => s.value === item.statusCode)?.detail;
     }
 
     /** Emails don't expose an attachment count on activitypointer, so count them in one query per page */
@@ -556,48 +618,6 @@ export class DataverseDataSource implements TimelineDataSource {
         } catch {
             // Counts are a nicety; the feed works without them
         }
-    }
-
-    // --- activity per week ----------------------------------------------------------------------------------
-
-    public async getRhythm(sort: FeedSort, from: Date, to: Date): Promise<RhythmRow[]> {
-        const types = this.activityTypes();
-        const inRange = (c: string) => `(${c} ge ${from.toISOString()} and ${c} lt ${to.toISOString()})`;
-        const event = sort.activities === "eventdate";
-        // By activity date an item can sit at any of these, so ask for items with any of them in the window
-        const columns = event ? ["createdon", "scheduledstart", "scheduledend", "actualend"] : [sort.activities];
-        const build = () =>
-            `?$select=activitytypecode,statecode,createdon,modifiedon,scheduledstart,scheduledend,actualend,senton,sortdate` +
-            `&$filter=${[this.scopeFilter(), types ? typeIn(types) : undefined, anyOf(columns.map(inRange))].filter(Boolean).join(" and ")}`;
-        const notesColumn = event ? "createdon" : sort.notes;
-        const [activities, notes] = await Promise.all([
-            this.queryActivities(build, RHYTHM_LIMIT),
-            this.config.includeNotes
-                ? this.context.webAPI.retrieveMultipleRecords(
-                    "annotation",
-                    `?$select=${notesColumn}&$filter=_objectid_value eq ${normalizeId(this.record.id)} and ${inRange(notesColumn)}`,
-                    RHYTHM_LIMIT,
-                )
-                : Promise.resolve(undefined),
-        ]);
-
-        const rows: RhythmRow[] = [];
-        for (const r of activities.entities as Row[]) {
-            const entity = str(r, "activitytypecode") ?? "activitypointer";
-            const createdOn = date(r, "createdon") ?? new Date(0);
-            const when = event
-                ? eventDate(
-                    { state: mapState(num(r, "statecode")), createdOn, scheduledStart: date(r, "scheduledstart"), scheduledEnd: date(r, "scheduledend"), actualEnd: date(r, "actualend") },
-                    dateRule(entity, this.config),
-                ).date
-                : date(r, sort.activities) ?? createdOn;
-            if (when >= from && when < to) rows.push({ entity, date: when });
-        }
-        for (const n of (notes?.entities ?? []) as Row[]) {
-            const when = date(n, notesColumn);
-            if (when) rows.push({ entity: "annotation", date: when });
-        }
-        return rows;
     }
 
     // --- mapping ------------------------------------------------------------------------------------------
@@ -703,6 +723,7 @@ export class DataverseDataSource implements TimelineDataSource {
             kind: "note",
             typeLabel: this.labels.note,
             title: heading.title,
+            noteSubject: str(r, "subject"),
             snippet: heading.snippet,
             body: text,
             bodyIsHtml: isHtml,
@@ -733,7 +754,7 @@ export class DataverseDataSource implements TimelineDataSource {
         const row = (result.entities as Row[])[0];
         if (!row) return undefined;
         const item = this.mapActivity(row, "createdon");
-        await this.addStatusLabels([item]);
+        await this.addStatusDetails([item]);
         return item;
     }
 
@@ -752,28 +773,57 @@ export class DataverseDataSource implements TimelineDataSource {
     }
 
     public async getDetails(item: TimelineItem): Promise<ItemDetails> {
-        const attachmentsPromise = item.kind === "activity" ? this.getAttachments(item.id) : Promise.resolve(item.file ? [item.file] : []);
+        if (item.kind === "note") {
+            const text = item.body ?? "";
+            return {
+                fields: [],
+                attachments: item.file ? [item.file] : [],
+                edit: { title: item.noteSubject ?? "", text, textIsRich: !!item.bodyIsHtml, allDay: false, priorities: [] },
+            };
+        }
+        const attachmentsPromise = this.getAttachments(item.id);
         const columns = previewColumns(item.entity, this.config);
+        const open = canEdit(item);
+        // What the preview can change comes along in the same query, so being able to work on an item costs nothing extra
+        const editing = open && quickEdit(item.entity) !== undefined;
+        const editColumns = editing ? ["subject", "description", "scheduledstart", "scheduledend", "prioritycode", ...(item.entity === "appointment" ? ["isalldayevent"] : [])] : [];
+        const asked = open ? Array.from(new Set([...columns, "prioritycode", "statuscode"])) : columns;
+        const md = asked.length > 0 ? await this.metadata(item.entity, asked) : undefined;
+        const valid = columns.filter((c) => !md?.Attributes?.get || md.Attributes.get(c) !== undefined);
+        const names = valid.map((c) => (isLookupAttribute(md?.Attributes?.get?.(c)) ? `_${c}_value` : c));
+        const select = Array.from(new Set([...names, ...editColumns]));
         const fields: PreviewField[] = [];
-        if (columns.length > 0) {
-            const md = await this.metadata(item.entity, columns);
-            const valid = columns.filter((c) => !md?.Attributes?.get || md.Attributes.get(c) !== undefined);
-            const select = valid.map((c) => (isLookupAttribute(md?.Attributes?.get?.(c)) ? `_${c}_value` : c));
-            if (select.length > 0) {
-                try {
-                    const row = (await this.context.webAPI.retrieveRecord(item.entity, item.id, `?$select=${select.join(",")}`)) as Row;
-                    valid.forEach((col, i) => {
-                        const value = this.displayValue(row, select[i]);
-                        if (value !== undefined) {
-                            fields.push({ name: col, label: md?.Attributes?.get?.(col)?.DisplayName ?? col, value });
-                        }
-                    });
-                } catch {
-                    // A misconfigured column shouldn't break the preview; the rest still renders
-                }
+        let edit: EditValues | undefined;
+        if (select.length > 0) {
+            try {
+                const row = (await this.context.webAPI.retrieveRecord(item.entity, item.id, `?$select=${select.join(",")}`)) as Row;
+                valid.forEach((col, i) => {
+                    const value = this.displayValue(row, names[i]);
+                    if (value !== undefined) {
+                        fields.push({ name: col, label: md?.Attributes?.get?.(col)?.DisplayName ?? col, value });
+                    }
+                });
+                if (editing) edit = this.editValues(row, md);
+            } catch {
+                // A misconfigured column shouldn't break the preview; the rest still renders
             }
         }
-        return { fields, attachments: await attachmentsPromise };
+        return { fields, attachments: await attachmentsPromise, edit, statuses: open ? withStatusDetails(statusOptions(md), await this.getStateLabels()) : undefined };
+    }
+
+    private editValues(row: Row, md: MetadataLike | undefined): EditValues {
+        const options = md?.Attributes?.get?.("prioritycode")?.OptionSet ?? {};
+        const text = str(row, "description") ?? "";
+        return {
+            title: str(row, "subject") ?? "",
+            text,
+            textIsRich: looksLikeHtml(text),
+            start: date(row, "scheduledstart"),
+            end: date(row, "scheduledend"),
+            allDay: row.isalldayevent === true,
+            priority: num(row, "prioritycode"),
+            priorities: Object.keys(options).map((value) => ({ value: Number(value), label: options[value]?.text ?? value })),
+        };
     }
 
     private displayValue(row: Row, key: string): string | undefined {
@@ -825,6 +875,12 @@ export class DataverseDataSource implements TimelineDataSource {
         );
     }
 
+    /** Every activity shares this one list, whatever its own status reasons are called, and Dataverse translates it */
+    public async getStateLabels(): Promise<StateLabels> {
+        const options = (await this.metadata("activitypointer", ["statecode"]))?.Attributes?.get?.("statecode")?.OptionSet;
+        return { open: options?.["0"]?.text, completed: options?.["1"]?.text, canceled: options?.["2"]?.text, scheduled: options?.["3"]?.text };
+    }
+
     // --- actions ------------------------------------------------------------------------------------------
 
     public async createNote(note: NewNote): Promise<void> {
@@ -847,14 +903,41 @@ export class DataverseDataSource implements TimelineDataSource {
 
     public async completeActivity(item: TimelineItem): Promise<void> {
         if (!canComplete(item.entity)) return;
-        const status = completedStatus(item.entity);
-        const data: Row = { statecode: 1 };
-        if (status !== undefined) data.statuscode = status;
+        // Without a status reason, Dataverse sets the table's default for the new state
+        await this.context.webAPI.updateRecord(item.entity, item.id, { statecode: 1 });
+    }
+
+    public async updateItem(item: TimelineItem, before: EditValues, changes: ItemChanges): Promise<void> {
+        const data: Row = {};
+        if (changes.title !== undefined) data.subject = changes.title;
+        if (changes.text !== undefined) data[item.kind === "note" ? "notetext" : "description"] = changes.text;
+        if (changes.start !== undefined) data.scheduledstart = changes.start?.toISOString() ?? null;
+        if (changes.end !== undefined) data.scheduledend = changes.end?.toISOString() ?? null;
+        if (changes.priority !== undefined) data.prioritycode = changes.priority;
+        if (changes.status) {
+            data.statecode = changes.status.state;
+            // Closing leaves the status reason to Dataverse, as completing does
+            if (isOpenState(mapState(changes.status.state))) data.statuscode = changes.status.value;
+        }
         await this.context.webAPI.updateRecord(item.entity, item.id, data);
+        applyChanges(item, before, changes, this.labels.note, this.env.now());
     }
 
     public async openRecord(entity: string, id: string): Promise<void> {
         await this.context.navigation.openForm({ entityName: entity, entityId: id });
+    }
+
+    public async openRecordPanel(entity: string, id: string): Promise<void> {
+        // The PCF API has no panel, so this is the app's own navigation. Other hosts don't have it and open the record instead.
+        const navigation = (window as unknown as XrmWindow).Xrm?.Navigation;
+        if (!navigation?.navigateTo) {
+            await this.openRecord(entity, id);
+            return;
+        }
+        await navigation.navigateTo(
+            { pageType: "entityrecord", entityName: entity, entityId: id, formType: 2 },
+            { target: 2, position: 2, width: { value: PREVIEW_WIDTH, unit: "px" } },
+        );
     }
 
     public async createActivity(entity: string): Promise<boolean> {
@@ -873,6 +956,14 @@ export class DataverseDataSource implements TimelineDataSource {
         const appId = new URLSearchParams(window.location.search).get("appid");
         return `${window.location.origin}/main.aspx?${appId ? `appid=${appId}&` : ""}pagetype=entityrecord&etn=${entity}&id=${id}`;
     }
+}
+
+/** Open work can be set to each of its status reasons. Closing is one choice per state, and Dataverse picks the reason when it's saved. */
+function statusOptions(md: MetadataLike | undefined): StatusOption[] {
+    const options = (md?.Attributes?.get?.("statuscode")?.attributeDescriptor?.OptionSet ?? []).flatMap((o) =>
+        !o.IsHidden && o.Value !== undefined && o.State !== undefined ? [{ value: o.Value, state: o.State, label: o.Label ?? "" }] : [],
+    );
+    return options.filter((s, i) => isOpenState(mapState(s.state)) || options.findIndex((o) => o.state === s.state) === i);
 }
 
 function isOverdue(entity: string, state: ItemState, scheduledEnd: Date | undefined, now: Date): boolean {

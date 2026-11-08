@@ -1,163 +1,131 @@
 import * as React from "react";
 import {
-    Avatar, Button, DrawerBody, DrawerFooter, DrawerHeader, makeStyles, mergeClasses, OverlayDrawer, shorthands, Spinner,
-    tokens, Tooltip,
+    Avatar, Button, DrawerBody, DrawerFooter, DrawerHeader, makeStyles, mergeClasses, OverlayDrawer, shorthands, Spinner, tokens, Tooltip,
 } from "@fluentui/react-components";
 import {
-    ArrowDownLeftRegular, ArrowDownloadRegular, ArrowRightRegular, ArrowUpRightRegular, AttachRegular, CalendarLtrRegular,
-    CheckmarkCircleRegular, CheckmarkRegular, ChevronDownRegular, ChevronUpRegular, ClockRegular, DismissCircleRegular,
-    DismissRegular, DocumentPdfRegular, DocumentRegular, EditRegular, FluentIcon, ImageRegular, LinkRegular, OpenRegular,
+    ArrowDownLeftRegular, ArrowDownloadRegular, ArrowUpRightRegular, AttachRegular, CheckmarkCircleFilled, CheckmarkRegular, ChevronDownRegular, ChevronUpRegular,
+    DismissRegular, DocumentPdfRegular, DocumentRegular, EditRegular, ImageRegular, LinkRegular, OpenRegular,
 } from "@fluentui/react-icons";
-import { canComplete, dateRule } from "../model/activityTypes";
-import { DateEnv, formatDuration, formatFull, formatLong, formatRelative, formatShortDate, formatSpan } from "../model/dates";
+import { canComplete, canEdit, dateRule, quickEdit } from "../model/activityTypes";
+import { formatDuration, formatFull, formatShortDate } from "../model/dates";
 import { isOpenState } from "../model/feed";
 import { escapeHtml, stripReplyPrefixes } from "../model/html";
-import { AttachmentRef, FeedEntry, ItemDetails, PartyRef, TimelineItem } from "../model/types";
+import { AttachmentRef, EditValues, FeedEntry, ItemChanges, ItemDetails, StatusOption, TimelineItem } from "../model/types";
+import { NODE, People, SectionHeader, TypeNode } from "./CardParts";
+import { useConfirmClose } from "./ConfirmClose";
 import { HtmlFrame } from "./HtmlFrame";
-import { Translate, useTimelineEnv, useTypeVisual } from "./TimelineContext";
+import { useTimelineEnv } from "./TimelineContext";
+import { errorMessage } from "./useTimeline";
+import { DateChip, DateText, InlineText, keyDate, PriorityChip, Prop, StatusChip } from "./WorkControls";
+
+const GUTTER = tokens.spacingHorizontalM;
 
 const useStyles = makeStyles({
     drawer: {
-        width: "640px",
+        width: "560px",
         maxWidth: "100vw",
     },
-    headerBar: {
+    toolbar: {
         display: "flex",
         alignItems: "center",
-        columnGap: tokens.spacingHorizontalS,
+        columnGap: "2px",
         width: "100%",
     },
-    typeChip: {
-        display: "inline-flex",
-        alignItems: "center",
-        columnGap: "6px",
-        height: "24px",
-        ...shorthands.padding("0", "10px", "0", "4px"),
-        borderRadius: tokens.borderRadiusCircular,
-        fontSize: tokens.fontSizeBase200,
-        fontWeight: tokens.fontWeightSemibold,
-    },
-    typeIcon: {
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "18px",
-        height: "18px",
-        borderRadius: tokens.borderRadiusCircular,
-        fontSize: "12px",
-    },
-    status: {
-        fontSize: tokens.fontSizeBase200,
-        color: tokens.colorNeutralForeground3,
-    },
-    statusOverdue: {
-        color: tokens.colorPaletteRedForeground1,
-        fontWeight: tokens.fontWeightSemibold,
+    header: {
+        ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalM, "0"),
     },
     spacer: { flexGrow: 1 },
     counter: {
         fontSize: tokens.fontSizeBase200,
         color: tokens.colorNeutralForeground3,
         fontVariantNumeric: "tabular-nums",
-        minWidth: "48px",
-        textAlign: "center",
+        marginLeft: tokens.spacingHorizontalXS,
     },
-    title: {
-        marginTop: tokens.spacingVerticalL,
-        marginBottom: 0,
-        fontSize: tokens.fontSizeBase600,
+    body: {
+        display: "flex",
+        flexDirection: "column",
+        rowGap: tokens.spacingVerticalL,
+        ...shorthands.padding(tokens.spacingVerticalM, tokens.spacingHorizontalXL, tokens.spacingVerticalXL),
+    },
+    // The card, opened: its icon, title and who it's between, in the same places
+    identity: {
+        display: "grid",
+        gridTemplateColumns: `${NODE}px minmax(0, 1fr)`,
+        columnGap: GUTTER,
+        alignItems: "start",
+    },
+    identityText: { minWidth: 0 },
+    heading: {
+        ...shorthands.margin(0),
+        fontSize: "18px",
         fontWeight: tokens.fontWeightSemibold,
-        lineHeight: tokens.lineHeightBase600,
+        lineHeight: "24px",
         color: tokens.colorNeutralForeground1,
         overflowWrap: "anywhere",
         // Focus lands here so screen readers start at the content; it isn't interactive, so no ring
-        // (the app's own focus styles are more specific than a plain rule)
         outlineStyle: "none",
         ":focus": { outlineStyle: "none" },
         ":focus-visible": { outlineStyle: "none" },
     },
-    when: {
-        marginTop: "4px",
-        fontSize: tokens.fontSizeBase200,
-        color: tokens.colorNeutralForeground3,
-    },
-    // The one date that matters for this item, right under the title
-    headline: {
-        display: "flex",
-        flexDirection: "column",
-        rowGap: tokens.spacingVerticalXS,
-        marginTop: tokens.spacingVerticalS,
-    },
-    keyDate: {
+    meta: {
         display: "flex",
         alignItems: "center",
         flexWrap: "wrap",
         columnGap: "6px",
-        fontSize: tokens.fontSizeBase300,
-        lineHeight: tokens.lineHeightBase300,
-        fontWeight: tokens.fontWeightSemibold,
-        color: tokens.colorNeutralForeground1,
-    },
-    keyDateDanger: { color: tokens.colorPaletteRedForeground1 },
-    keyIcon: { fontSize: "16px", flexShrink: 0, color: tokens.colorNeutralForeground3 },
-    keyIconDanger: { color: tokens.colorPaletteRedForeground1 },
-    keyRelative: { fontWeight: tokens.fontWeightRegular, color: tokens.colorNeutralForeground3 },
-    keyNote: { paddingLeft: "22px", fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground3 },
-    people: {
-        display: "flex",
-        alignItems: "center",
-        flexWrap: "wrap",
-        gap: "6px",
+        rowGap: "2px",
+        marginTop: "2px",
+        color: tokens.colorNeutralForeground3,
         fontSize: tokens.fontSizeBase200,
-        color: tokens.colorNeutralForeground2,
+        lineHeight: tokens.lineHeightBase200,
     },
-    person: { display: "inline-flex", alignItems: "center", columnGap: "4px", whiteSpace: "nowrap" },
-    peopleArrow: { fontSize: "12px", color: tokens.colorNeutralForeground3 },
-    peopleMore: { color: tokens.colorNeutralForeground3 },
-    content: {
+    typeLabel: { fontWeight: tokens.fontWeightMedium, color: tokens.colorNeutralForeground2 },
+    // Lines up with the title, past the icon, like the text on a card
+    indented: {
         display: "flex",
         flexDirection: "column",
         rowGap: tokens.spacingVerticalL,
-        ...shorthands.padding(tokens.spacingVerticalS, "0", tokens.spacingVerticalL),
+        paddingLeft: `calc(${NODE}px + ${GUTTER})`,
+        minWidth: 0,
     },
-    // Secondary facts, set apart and quieter than the content
-    meta: {
+    props: {
         display: "flex",
-        flexDirection: "column",
-        rowGap: tokens.spacingVerticalS,
-        ...shorthands.padding(tokens.spacingVerticalM, "0", tokens.spacingVerticalS),
-        ...shorthands.borderTop(tokens.strokeWidthThin, "solid", tokens.colorNeutralStroke2),
+        alignItems: "flex-start",
+        flexWrap: "wrap",
+        ...shorthands.gap(tokens.spacingVerticalM, tokens.spacingHorizontalL),
     },
+    text: {
+        fontSize: tokens.fontSizeBase300,
+        lineHeight: tokens.lineHeightBase400,
+        color: tokens.colorNeutralForeground1,
+        whiteSpace: "pre-wrap",
+        overflowWrap: "anywhere",
+    },
+    hint: {
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        columnGap: tokens.spacingHorizontalS,
+        fontSize: tokens.fontSizeBase200,
+        color: tokens.colorNeutralForeground3,
+    },
+    section: { display: "flex", flexDirection: "column", rowGap: tokens.spacingVerticalS },
     metaList: {
         display: "grid",
         gridTemplateColumns: "max-content minmax(0, 1fr)",
         columnGap: tokens.spacingHorizontalL,
-        rowGap: "6px",
+        rowGap: "4px",
         margin: 0,
+        paddingLeft: `calc(${NODE}px + ${GUTTER})`,
         fontSize: tokens.fontSizeBase200,
         lineHeight: tokens.lineHeightBase200,
     },
     metaLabel: { color: tokens.colorNeutralForeground3 },
     metaValue: { margin: 0, color: tokens.colorNeutralForeground2, overflowWrap: "anywhere" },
-    sectionTitle: {
-        fontSize: tokens.fontSizeBase100,
-        fontWeight: tokens.fontWeightSemibold,
-        textTransform: "uppercase",
-        letterSpacing: "0.04em",
-        color: tokens.colorNeutralForeground3,
-    },
-    plainBody: {
-        whiteSpace: "pre-wrap",
-        overflowWrap: "anywhere",
-        fontSize: tokens.fontSizeBase400,
-        lineHeight: "24px",
-        color: tokens.colorNeutralForeground1,
-    },
-    empty: { color: tokens.colorNeutralForeground3, fontStyle: "italic", fontSize: tokens.fontSizeBase200 },
     attachments: {
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
         gap: tokens.spacingHorizontalS,
+        paddingLeft: `calc(${NODE}px + ${GUTTER})`,
     },
     attachment: {
         display: "flex",
@@ -169,13 +137,13 @@ const useStyles = makeStyles({
         backgroundColor: tokens.colorNeutralBackground1,
     },
     thumb: {
-        height: "96px",
+        height: "72px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: tokens.colorNeutralBackground3,
         color: tokens.colorNeutralForeground3,
-        fontSize: "28px",
+        fontSize: "22px",
         overflow: "hidden",
     },
     thumbImg: { width: "100%", height: "100%", objectFit: "cover" },
@@ -183,14 +151,14 @@ const useStyles = makeStyles({
         display: "flex",
         alignItems: "center",
         columnGap: "4px",
-        ...shorthands.padding("4px", "4px", "4px", tokens.spacingHorizontalS),
+        ...shorthands.padding("2px", "2px", "2px", tokens.spacingHorizontalS),
     },
     attachmentText: { display: "flex", flexDirection: "column", minWidth: 0, flexGrow: 1 },
     attachmentName: { fontSize: tokens.fontSizeBase200, fontWeight: tokens.fontWeightSemibold, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
     attachmentSize: { fontSize: tokens.fontSizeBase100, color: tokens.colorNeutralForeground3 },
     imagePreview: {
         maxWidth: "100%",
-        maxHeight: "420px",
+        maxHeight: "320px",
         borderRadius: tokens.borderRadiusLarge,
         objectFit: "contain",
         alignSelf: "flex-start",
@@ -200,38 +168,47 @@ const useStyles = makeStyles({
         display: "flex",
         alignItems: "center",
         columnGap: tokens.spacingHorizontalS,
-        width: "100%",
+        ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalXL, tokens.spacingVerticalM),
+        ...shorthands.borderTop(tokens.strokeWidthThin, "solid", tokens.colorNeutralStroke2),
     },
-    hint: { fontSize: tokens.fontSizeBase100, color: tokens.colorNeutralForeground3, marginLeft: "auto", textAlign: "right" },
+    saveState: {
+        display: "inline-flex",
+        alignItems: "center",
+        columnGap: "4px",
+        minWidth: 0,
+        fontSize: tokens.fontSizeBase200,
+        color: tokens.colorNeutralForeground3,
+    },
+    saved: { color: tokens.colorPaletteGreenForeground1 },
+    saveError: { color: tokens.colorPaletteRedForeground1, overflowWrap: "anywhere" },
+    actionButton: { flexShrink: 0, whiteSpace: "nowrap" },
     dirIn: { color: tokens.colorPaletteBlueForeground2 },
     dirOut: { color: tokens.colorPaletteGreenForeground2 },
-    conversation: { display: "flex", flexDirection: "column", rowGap: tokens.spacingVerticalS, ...shorthands.padding(tokens.spacingVerticalS, "0") },
-    conversationBar: { display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: "-4px" },
+    conversation: { display: "flex", flexDirection: "column", rowGap: "2px" },
+    conversationBar: { display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: "-6px" },
     message: {
-        ...shorthands.border(tokens.strokeWidthThin, "solid", tokens.colorNeutralStroke2),
         borderRadius: tokens.borderRadiusLarge,
-        backgroundColor: tokens.colorNeutralBackground1,
         overflow: "hidden",
     },
-    messageOpen: { ...shorthands.borderColor(tokens.colorNeutralStroke1), boxShadow: tokens.shadow2 },
     messageHead: {
         display: "flex",
         alignItems: "flex-start",
-        columnGap: tokens.spacingHorizontalM,
+        columnGap: GUTTER,
         width: "100%",
-        ...shorthands.padding(tokens.spacingVerticalS, tokens.spacingHorizontalM),
+        ...shorthands.padding(tokens.spacingVerticalS, "0"),
         ...shorthands.border(0),
         backgroundColor: "transparent",
         textAlign: "left",
         fontFamily: tokens.fontFamilyBase,
         color: tokens.colorNeutralForeground1,
         cursor: "pointer",
+        borderRadius: tokens.borderRadiusMedium,
         ":hover": { backgroundColor: tokens.colorNeutralBackground1Hover },
         ":focus-visible": { outlineWidth: tokens.strokeWidthThick, outlineStyle: "solid", outlineColor: tokens.colorStrokeFocus2, outlineOffset: "-2px" },
     },
     messageText: { display: "flex", flexDirection: "column", rowGap: "2px", minWidth: 0, flexGrow: 1 },
     messageTop: { display: "flex", alignItems: "center", columnGap: "6px", minWidth: 0 },
-    messageFrom: { fontSize: tokens.fontSizeBase300, fontWeight: tokens.fontWeightSemibold, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+    messageFrom: { fontSize: tokens.fontSizeBase300, fontWeight: tokens.fontWeightSemibold, lineHeight: tokens.lineHeightBase300, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
     messageDir: { fontSize: "13px", flexShrink: 0 },
     messageMeta: { display: "inline-flex", alignItems: "center", columnGap: "2px", flexShrink: 0, fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground3, fontVariantNumeric: "tabular-nums" },
     messageSnippet: { fontSize: tokens.fontSizeBase200, color: tokens.colorNeutralForeground3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
@@ -239,9 +216,10 @@ const useStyles = makeStyles({
     messageBody: {
         display: "flex",
         flexDirection: "column",
-        rowGap: tokens.spacingVerticalM,
-        ...shorthands.padding("0", tokens.spacingHorizontalM, tokens.spacingVerticalM, `calc(28px + ${tokens.spacingHorizontalM} * 2)`),
+        rowGap: tokens.spacingVerticalS,
+        ...shorthands.padding("0", "0", tokens.spacingVerticalM, `calc(${NODE}px + ${GUTTER})`),
     },
+    messageActions: { display: "flex", columnGap: tokens.spacingHorizontalXS },
 });
 
 interface PreviewDrawerProps {
@@ -255,12 +233,15 @@ interface PreviewDrawerProps {
     onStep: (delta: number) => void;
     onOpen: (item: TimelineItem) => void;
     onComplete: (item: TimelineItem) => Promise<void>;
+    onSaveEdit: (item: TimelineItem, before: EditValues, changes: ItemChanges) => Promise<void>;
+    /** The real form, for what's too complex to work on here */
+    onEditInForm: (item: TimelineItem) => void;
     onCopyLink: (item: TimelineItem) => void;
 }
 
 const MAX_THUMB_BYTES = 3 * 1024 * 1024;
-/** Shown by the date line and details already */
-const SCHEDULE_COLUMNS = new Set(["scheduledstart", "scheduledend", "actualdurationminutes", "actualend"]);
+/** Shown elsewhere in the panel already */
+const HIDDEN_COLUMNS = new Set(["scheduledstart", "scheduledend", "actualdurationminutes", "actualend", "ownerid", "prioritycode", "statuscode"]);
 
 interface LoadedDetails {
     details?: ItemDetails;
@@ -272,11 +253,13 @@ interface LoadedDetails {
 function useItemDetails(item: TimelineItem, enabled: boolean): LoadedDetails {
     const { source } = useTimelineEnv();
     const [state, setState] = React.useState<LoadedDetails>({ files: {}, loading: false });
+    const loaded = React.useRef(new Set<string>());
 
     React.useEffect(() => {
         if (!enabled) return;
         let cancelled = false;
-        setState({ files: {}, loading: true });
+        // A refresh of the same item keeps what's on screen until the new values are there
+        setState((s) => ({ ...s, loading: true }));
 
         const loadImage = async (a: AttachmentRef) => {
             try {
@@ -298,7 +281,10 @@ function useItemDetails(item: TimelineItem, enabled: boolean): LoadedDetails {
             if (cancelled) return;
             setState((s) => ({ ...s, details: d, loading: false }));
             // Image previews and inline email images load up front; other files load on download
-            d.attachments.filter((a) => a.mimeType?.startsWith("image/") && (a.size ?? 0) <= MAX_THUMB_BYTES).forEach((a) => void loadImage(a));
+            d.attachments.filter((a) => a.mimeType?.startsWith("image/") && (a.size ?? 0) <= MAX_THUMB_BYTES && !loaded.current.has(a.id)).forEach((a) => {
+                loaded.current.add(a.id);
+                void loadImage(a);
+            });
         };
         void load();
         return () => {
@@ -334,27 +320,52 @@ function inlineImageMap(details: ItemDetails | undefined, files: Record<string, 
     return map;
 }
 
-export const PreviewDrawer: React.FC<PreviewDrawerProps> = ({ entry, focusKey, index, count, onClose, onStep, onOpen, onComplete, onCopyLink }) => {
-    const { t, dates } = useTimelineEnv();
+export const PreviewDrawer: React.FC<PreviewDrawerProps> = ({ entry, focusKey, index, count, onClose, onStep, onOpen, onComplete, onSaveEdit, onEditInForm, onCopyLink }) => {
+    const { t } = useTimelineEnv();
     const styles = useStyles();
-    const [completing, setCompleting] = React.useState(false);
     // Keep the last entry while the drawer animates closed
     const lastEntry = React.useRef<FeedEntry>();
     if (entry) lastEntry.current = entry;
     const shown = entry ?? lastEntry.current;
     const lead = shown ? (shown.type === "item" ? shown.item : shown.items[0]) : undefined;
-    const titleRef = React.useRef<HTMLHeadingElement>(null);
+    const headingRef = React.useRef<HTMLHeadingElement>(null);
+    const backFromForm = React.useRef(false);
 
     // Start on the title rather than the first button, so the reader lands on the content and no tooltip pops up
+    const shownKey = entry?.key;
     React.useEffect(() => {
-        if (!entry) return;
-        const handle = window.setTimeout(() => titleRef.current?.focus({ preventScroll: true }), 50);
+        if (!shownKey) return;
+        const handle = window.setTimeout(() => headingRef.current?.focus({ preventScroll: true }), 50);
         return () => window.clearTimeout(handle);
-    }, [entry]);
+    }, [shownKey]);
+
+    // A button that just did its job can be gone, like Mark complete. Focus falls out of the panel then, and keys wouldn't reach it.
+    React.useEffect(() => {
+        if (!shownKey) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && document.activeElement === document.body) onClose();
+        };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [shownKey, onClose]);
+
+    const toForm = (item: TimelineItem) => {
+        backFromForm.current = true;
+        onEditInForm(item);
+    };
 
     const onKeyDown = (e: React.KeyboardEvent) => {
+        // Menus and dialogs opened from the panel sit outside it, and their keys are theirs
+        if (!e.currentTarget.contains(e.target as Node)) return;
+        const firstAfterForm = backFromForm.current;
+        backFromForm.current = false;
+        // When the app's own dialog has closed, it marks the next Esc as handled. Fluent respects that, so the first Esc after the form did nothing.
+        if (e.key === "Escape" && firstAfterForm && e.isDefaultPrevented()) {
+            onClose();
+            return;
+        }
         const target = e.target as HTMLElement;
-        if (target.closest("input, textarea, [contenteditable='true']")) return;
+        if (target.closest("input, textarea, [contenteditable='true'], [role='menu'], [role='grid'], [role='listbox']")) return;
         if (e.key === "ArrowDown" || e.key === "j") {
             e.preventDefault();
             onStep(1);
@@ -364,20 +375,14 @@ export const PreviewDrawer: React.FC<PreviewDrawerProps> = ({ entry, focusKey, i
         } else if ((e.key === "o" || e.key === "O") && lead) {
             e.preventDefault();
             onOpen(lead);
+        } else if ((e.key === "e" || e.key === "E") && lead && shown?.type === "item" && canEdit(lead)) {
+            e.preventDefault();
+            if (quickEdit(lead.entity)) e.currentTarget.querySelector<HTMLElement>("[data-first-edit]")?.focus();
+            else toForm(lead);
         }
     };
 
-    const showComplete = shown?.type === "item" && shown.item.kind === "activity" && isOpenState(shown.item.state) && canComplete(shown.item.entity);
-
-    let title = "";
-    let subtitle = "";
-    if (shown?.type === "item") {
-        title = shown.item.title;
-    } else if (shown?.type === "thread") {
-        const oldest = shown.items[shown.items.length - 1];
-        title = stripReplyPrefixes(shown.items[0].title);
-        subtitle = `${t("messages", shown.items.length)} · ${formatShortDate(dates, oldest.date)} – ${formatShortDate(dates, shown.items[0].date)}`;
-    }
+    const ariaTitle = shown?.type === "thread" ? stripReplyPrefixes(shown.items[0].title) : lead?.title;
 
     return (
         <OverlayDrawer
@@ -385,119 +390,297 @@ export const PreviewDrawer: React.FC<PreviewDrawerProps> = ({ entry, focusKey, i
             open={!!entry}
             onOpenChange={(_, d) => !d.open && onClose()}
             className={styles.drawer}
-            aria-label={title}
+            aria-label={ariaTitle}
             onKeyDown={onKeyDown}
         >
             {shown && lead && (
                 <>
-                    <DrawerHeader>
-                        <div className={styles.headerBar}>
-                            <TypeChip item={lead} />
-                            {shown.type === "item" ? <StatusText item={lead} /> : <span className={styles.status}>{t("conversation")}</span>}
-                            <span className={styles.spacer} />
+                    <DrawerHeader className={styles.header}>
+                        <div className={styles.toolbar}>
                             {count > 0 && (
                                 <>
-                                    <Tooltip content={t("previousItem")} relationship="label">
+                                    <Tooltip content={`${t("previousItem")} (↑)`} relationship="label">
                                         <Button appearance="subtle" size="small" icon={<ChevronUpRegular />} disabled={index <= 0} onClick={() => onStep(-1)} />
                                     </Tooltip>
-                                    <span className={styles.counter}>{t("itemOfTotal", index + 1, count)}</span>
-                                    <Tooltip content={t("nextItem")} relationship="label">
+                                    <Tooltip content={`${t("nextItem")} (↓)`} relationship="label">
                                         <Button appearance="subtle" size="small" icon={<ChevronDownRegular />} disabled={index >= count - 1} onClick={() => onStep(1)} />
                                     </Tooltip>
+                                    <span className={styles.counter}>{t("itemOfTotal", index + 1, count)}</span>
                                 </>
                             )}
-                            <Tooltip content={t("close")} relationship="label">
-                                <Button appearance="subtle" icon={<DismissRegular />} onClick={onClose} />
+                            <span className={styles.spacer} />
+                            <Tooltip content={`${shown.type === "thread" ? t("openLatest") : t("openRecord")} (O)`} relationship="label">
+                                <Button appearance="subtle" size="small" icon={<OpenRegular />} onClick={() => onOpen(lead)} />
                             </Tooltip>
-                        </div>
-                        <h2 className={styles.title} ref={titleRef} tabIndex={-1}>
-                            {title}
-                        </h2>
-                        {shown.type === "item" ? <Headline item={shown.item} /> : <div className={styles.when}>{subtitle}</div>}
-                    </DrawerHeader>
-                    <DrawerBody>
-                        {shown.type === "item" ? (
-                            <ItemPreview key={shown.key} item={shown.item} />
-                        ) : (
-                            <ConversationPreview key={`${shown.key}|${focusKey ?? ""}`} items={shown.items} focusKey={focusKey} onOpen={onOpen} />
-                        )}
-                    </DrawerBody>
-                    <DrawerFooter>
-                        <div className={styles.footer}>
-                            <Button appearance="primary" icon={<OpenRegular />} onClick={() => onOpen(lead)}>
-                                {shown.type === "thread" ? t("openLatest") : t("openRecord")}
-                            </Button>
-                            {showComplete && (
-                                <Button
-                                    icon={completing ? <Spinner size="extra-tiny" /> : <CheckmarkRegular />}
-                                    disabled={completing}
-                                    onClick={() => {
-                                        setCompleting(true);
-                                        void (async () => {
-                                            try {
-                                                await onComplete(lead);
-                                            } finally {
-                                                setCompleting(false);
-                                            }
-                                        })();
-                                    }}
-                                >
-                                    {t("markComplete")}
-                                </Button>
-                            )}
                             <Tooltip content={t("copyLink")} relationship="label">
-                                <Button appearance="subtle" icon={<LinkRegular />} onClick={() => onCopyLink(lead)} />
+                                <Button appearance="subtle" size="small" icon={<LinkRegular />} onClick={() => onCopyLink(lead)} />
                             </Tooltip>
-                            <span className={styles.hint}>{t("previewKeyboardHint")}</span>
+                            <Tooltip content={`${t("close")} (Esc)`} relationship="label">
+                                <Button appearance="subtle" size="small" icon={<DismissRegular />} onClick={onClose} />
+                            </Tooltip>
                         </div>
-                    </DrawerFooter>
+                    </DrawerHeader>
+                    {shown.type === "item" ? (
+                        <ItemPanel key={shown.key} item={shown.item} headingRef={headingRef} onSaveEdit={onSaveEdit} onComplete={onComplete} onEditInForm={toForm} />
+                    ) : (
+                        <ConversationPanel
+                            key={`${shown.key}|${focusKey ?? ""}`}
+                            items={shown.items}
+                            focusKey={focusKey}
+                            headingRef={headingRef}
+                            onOpen={onOpen}
+                            onEditInForm={toForm}
+                        />
+                    )}
                 </>
             )}
         </OverlayDrawer>
     );
 };
 
+type SaveState = { kind: "idle" } | { kind: "saving" } | { kind: "saved" } | { kind: "error"; message: string };
+
 /**
- * One item: the description and files first, as that's what people open a preview for.
- * Owner, priority, configured columns and record dates follow as quieter details.
+ * One item, built like its card: same icon, same title, the status where it's easy to find.
+ * Open work is worked on right here. Everything saves when it's changed, with no edit mode and nothing to press.
  */
-const ItemPreview: React.FC<{ item: TimelineItem }> = ({ item }) => {
-    const { t } = useTimelineEnv();
+const ItemPanel: React.FC<{
+    item: TimelineItem;
+    headingRef: React.RefObject<HTMLHeadingElement>;
+    onSaveEdit: PreviewDrawerProps["onSaveEdit"];
+    onComplete: PreviewDrawerProps["onComplete"];
+    onEditInForm: (item: TimelineItem) => void;
+}> = ({ item, headingRef, onSaveEdit, onComplete, onEditInForm }) => {
+    const { t, dates, config } = useTimelineEnv();
     const styles = useStyles();
-    const { details, files, loading } = useItemDetails(item, true);
+    const { details, files } = useItemDetails(item, true);
     const download = useDownload();
     const inlineImages = React.useMemo(() => inlineImageMap(details, files), [details, files]);
+
+    const [values, setValues] = React.useState<EditValues>();
+    const valuesRef = React.useRef<EditValues>();
+    React.useEffect(() => {
+        if (!details?.edit) return;
+        valuesRef.current = details.edit;
+        setValues(details.edit);
+    }, [details?.edit]);
+
+    const [saveState, setSaveState] = React.useState<SaveState>({ kind: "idle" });
+    const savedTimer = React.useRef<number>();
+    React.useEffect(() => () => window.clearTimeout(savedTimer.current), []);
+
+    const save = async (changes: ItemChanges): Promise<boolean> => {
+        const before = valuesRef.current ?? { title: item.title, text: item.body ?? "", textIsRich: !!item.bodyIsHtml, allDay: false, priorities: [] };
+        window.clearTimeout(savedTimer.current);
+        setSaveState({ kind: "saving" });
+        try {
+            await onSaveEdit(item, before, changes);
+            const next: EditValues = {
+                ...before,
+                title: changes.title ?? before.title,
+                text: changes.text ?? before.text,
+                start: changes.start === undefined ? before.start : changes.start ?? undefined,
+                end: changes.end === undefined ? before.end : changes.end ?? undefined,
+                priority: changes.priority ?? before.priority,
+            };
+            valuesRef.current = next;
+            setValues(next);
+            setSaveState({ kind: "saved" });
+            // Closing work removes the buttons that did it; carry on from the title, so the arrows and Esc keep working
+            if (changes.status && changes.status.state !== 0 && changes.status.state !== 3) headingRef.current?.focus({ preventScroll: true });
+            savedTimer.current = window.setTimeout(() => setSaveState({ kind: "idle" }), 2500);
+            return true;
+        } catch (e) {
+            setSaveState({ kind: "error", message: `${t("saveFailed")} ${errorMessage(e)}` });
+            return false;
+        }
+    };
+
+    const refuse = (message: string) => {
+        setSaveState({ kind: "error", message });
+        return Promise.resolve(false);
+    };
+
+    const commitTitle = (next: string) => {
+        const title = next.trim();
+        if (title === (valuesRef.current?.title ?? "").trim()) return Promise.resolve(true);
+        if (item.kind === "activity" && !title) return refuse(t("editTitleRequired"));
+        if (item.kind === "note" && !title && !(valuesRef.current?.text ?? "").trim() && !item.file) return refuse(t("editNoteEmpty"));
+        return save({ title });
+    };
+
+    const commitText = (next: string) => {
+        if (next === valuesRef.current?.text) return Promise.resolve(true);
+        if (item.kind === "note" && !next.trim() && !(valuesRef.current?.title ?? "").trim() && !item.file) return refuse(t("editNoteEmpty"));
+        return save({ text: next });
+    };
+
+    const open = canEdit(item);
+    const quick = open ? quickEdit(item.entity) : undefined;
+    const workable = !!quick && !!values;
     const isImageNote = !!item.file?.mimeType?.startsWith("image/");
     // A note's own image is shown large; listing it again as an attachment adds nothing
     const attachments = (details?.attachments ?? []).filter((a) => !(isImageNote && a.id === item.file?.id && files[a.id]));
+    // The date shown is the one that can be changed, whatever the feed is sorted by
+    const date = keyDate(item, quick === "due" ? "due" : quick === "span" ? "start" : dateRule(item.entity, config), t, dates);
+    const datesEditable = workable && quick !== "text" && !values?.allDay;
+    // The fields are there from the start, so nothing moves when what's in them has loaded
+    const textEditable = !!quick && !item.bodyIsHtml && !values?.textIsRich;
+    const textLabel = item.kind === "note" ? t("fieldText") : t("fieldDescription");
+    const closeStatus = details?.statuses?.find((s) => s.state === 1);
+    const showComplete = item.kind === "activity" && isOpenState(item.state) && canComplete(item.entity);
+    const formOnly = item.kind === "activity" && open && !quick;
+
+    const [confirmDialog, confirmClose] = useConfirmClose(headingRef);
+    // A note without a title goes by its text
+    const current = valuesRef.current;
+    const title = current?.title.trim() ? current.title : item.title;
+    const changeStatus = (next: StatusOption, trigger: HTMLElement | null) => {
+        if (next.state !== 1 && next.state !== 2) void save({ status: next });
+        else confirmClose({ title, canceled: next.state === 2, run: () => save({ status: next }), returnTo: trigger });
+    };
+    const complete = () => confirmClose({ title, canceled: false, run: () => (closeStatus ? save({ status: closeStatus }) : onComplete(item)) });
 
     return (
         <>
-            <div className={styles.content}>
-                {/* A file note without text just shows its file */}
-                {(!!item.body || !item.file) && <Body item={item} inlineImages={inlineImages} />}
-                {isImageNote && item.file && files[item.file.id] && <img className={styles.imagePreview} src={files[item.file.id]} alt={item.file.fileName} />}
+            <DrawerBody className={styles.body}>
+                <div className={styles.identity}>
+                    <TypeNode item={item} />
+                    <div className={styles.identityText}>
+                        <h2 className={styles.heading} ref={headingRef} tabIndex={-1}>
+                            {quick ? (
+                                <InlineText
+                                    first
+                                    title
+                                    value={values?.title ?? item.title}
+                                    readOnly={!values}
+                                    label={t("changeTitle")}
+                                    placeholder={t("addTitle")}
+                                    onCommit={commitTitle}
+                                />
+                            ) : (
+                                item.title
+                            )}
+                        </h2>
+                        <div className={styles.meta}>
+                            <span className={styles.typeLabel}>{item.typeLabel}</span>
+                            <People item={item} max={3} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className={styles.indented}>
+                    <div className={styles.props}>
+                        {item.kind === "activity" && <StatusChip item={item} statuses={quick ? details?.statuses : undefined} onChange={changeStatus} />}
+                        {datesEditable && values && quick ? <DateChip date={date} kind={quick} values={values} onSave={save} /> : <DateText date={date} />}
+                        {item.kind === "activity" && <PriorityChip item={item} values={values} editable={workable} onSave={save} />}
+                    </div>
+                    {workable && values?.allDay && (
+                        <div className={styles.hint}>
+                            <span>{t("editAllDay")}</span>
+                            <Button size="small" appearance="transparent" onClick={() => onEditInForm(item)}>
+                                {t("editInForm")}
+                            </Button>
+                        </div>
+                    )}
+                    {textEditable ? (
+                        <Prop wide label={textLabel}>
+                            <InlineText
+                                value={values?.text ?? item.body ?? ""}
+                                readOnly={!values}
+                                label={t("changeText")}
+                                placeholder={item.kind === "note" ? t("addText") : t("addDescription")}
+                                onCommit={commitText}
+                            />
+                        </Prop>
+                    ) : (
+                        !!item.body &&
+                        (item.entity === "email" ? (
+                            <Body item={item} inlineImages={inlineImages} />
+                        ) : (
+                            <Prop wide label={textLabel}>
+                                <Body item={item} inlineImages={inlineImages} />
+                            </Prop>
+                        ))
+                    )}
+                    {workable && values?.textIsRich && item.kind === "activity" && (
+                        <div className={styles.hint}>
+                            <span>{t("editRichText")}</span>
+                            <Button size="small" appearance="transparent" onClick={() => onEditInForm(item)}>
+                                {t("editInForm")}
+                            </Button>
+                        </div>
+                    )}
+                    {isImageNote && item.file && files[item.file.id] && <img className={styles.imagePreview} src={files[item.file.id]} alt={item.file.fileName} />}
+                </div>
+
                 {attachments.length > 0 && (
-                    <div className={styles.attachments}>
-                        {attachments.map((a) => (
-                            <AttachmentTile key={a.id} file={a} preview={files[a.id]} onDownload={() => void download(a)} />
-                        ))}
+                    <div className={styles.section}>
+                        <SectionHeader label={t("attachments")} count={attachments.length} />
+                        <div className={styles.attachments}>
+                            {attachments.map((a) => (
+                                <AttachmentTile key={a.id} file={a} preview={files[a.id]} onDownload={() => void download(a)} />
+                            ))}
+                        </div>
                     </div>
                 )}
-                {loading && !details && <Spinner size="tiny" label={t("loadingPreview")} />}
-            </div>
-            <Details item={item} details={details} />
+                <Details item={item} details={details} />
+            </DrawerBody>
+            {(showComplete || formOnly || saveState.kind !== "idle") && (
+                <DrawerFooter className={styles.footer}>
+                    <span className={styles.saveState} role="status">
+                        {saveState.kind === "saving" && (
+                            <>
+                                <Spinner size="extra-tiny" />
+                                {t("saving")}
+                            </>
+                        )}
+                        {saveState.kind === "saved" && (
+                            <>
+                                <CheckmarkCircleFilled className={styles.saved} />
+                                {t("saved")}
+                            </>
+                        )}
+                        {saveState.kind === "error" && <span className={styles.saveError}>{saveState.message}</span>}
+                    </span>
+                    <span className={styles.spacer} />
+                    {formOnly && (
+                        <Button className={styles.actionButton} appearance={showComplete ? "secondary" : "primary"} icon={<EditRegular />} onClick={() => onEditInForm(item)}>
+                            {t("editInForm")}
+                        </Button>
+                    )}
+                    {showComplete && (
+                        <Button
+                            className={styles.actionButton}
+                            appearance="primary"
+                            icon={saveState.kind === "saving" ? <Spinner size="extra-tiny" /> : <CheckmarkRegular />}
+                            disabled={saveState.kind === "saving"}
+                            onClick={complete}
+                        >
+                            {t("markComplete")}
+                        </Button>
+                    )}
+                </DrawerFooter>
+            )}
+            {confirmDialog}
         </>
     );
 };
 
 /** An email conversation, newest first. The newest (or focused) message is open; the rest expand on click. */
-const ConversationPreview: React.FC<{ items: TimelineItem[]; focusKey?: string; onOpen: (item: TimelineItem) => void }> = ({ items, focusKey, onOpen }) => {
-    const { t } = useTimelineEnv();
+const ConversationPanel: React.FC<{
+    items: TimelineItem[];
+    focusKey?: string;
+    headingRef: React.RefObject<HTMLHeadingElement>;
+    onOpen: (item: TimelineItem) => void;
+    onEditInForm: (item: TimelineItem) => void;
+}> = ({ items, focusKey, headingRef, onOpen, onEditInForm }) => {
+    const { t, dates } = useTimelineEnv();
     const styles = useStyles();
     const initial = focusKey && items.some((i) => i.key === focusKey) ? focusKey : items[0].key;
     const [expanded, setExpanded] = React.useState<Set<string>>(() => new Set([initial]));
     const allOpen = expanded.size === items.length;
+    const oldest = items[items.length - 1];
 
     const toggle = (key: string) =>
         setExpanded((s) => {
@@ -508,25 +691,46 @@ const ConversationPreview: React.FC<{ items: TimelineItem[]; focusKey?: string; 
         });
 
     return (
-        <div className={styles.conversation}>
-            <div className={styles.conversationBar}>
-                <Button
-                    size="small"
-                    appearance="transparent"
-                    icon={allOpen ? <ChevronUpRegular /> : <ChevronDownRegular />}
-                    onClick={() => setExpanded(allOpen ? new Set([items[0].key]) : new Set(items.map((i) => i.key)))}
-                >
-                    {allOpen ? t("collapseAll") : t("expandAll")}
-                </Button>
+        <DrawerBody className={styles.body}>
+            <div className={styles.identity}>
+                <TypeNode item={items[0]} badge={items.length} />
+                <div>
+                    <h2 className={styles.heading} ref={headingRef} tabIndex={-1}>
+                        {stripReplyPrefixes(items[0].title)}
+                    </h2>
+                    <div className={styles.meta}>
+                        <span className={styles.typeLabel}>{items[0].typeLabel}</span>
+                        <span>{t("messages", items.length)}</span>
+                        <span>· {formatShortDate(dates, oldest.date)} – {formatShortDate(dates, items[0].date)}</span>
+                    </div>
+                </div>
             </div>
-            {items.map((m) => (
-                <MessagePanel key={m.key} item={m} expanded={expanded.has(m.key)} onToggle={() => toggle(m.key)} onOpen={onOpen} />
-            ))}
-        </div>
+            <div className={styles.conversation}>
+                <div className={styles.conversationBar}>
+                    <Button
+                        size="small"
+                        appearance="transparent"
+                        icon={allOpen ? <ChevronUpRegular /> : <ChevronDownRegular />}
+                        onClick={() => setExpanded(allOpen ? new Set([items[0].key]) : new Set(items.map((i) => i.key)))}
+                    >
+                        {allOpen ? t("collapseAll") : t("expandAll")}
+                    </Button>
+                </div>
+                {items.map((m) => (
+                    <MessagePanel key={m.key} item={m} expanded={expanded.has(m.key)} onToggle={() => toggle(m.key)} onOpen={onOpen} onEditInForm={onEditInForm} />
+                ))}
+            </div>
+        </DrawerBody>
     );
 };
 
-const MessagePanel: React.FC<{ item: TimelineItem; expanded: boolean; onToggle: () => void; onOpen: (item: TimelineItem) => void }> = ({ item, expanded, onToggle, onOpen }) => {
+const MessagePanel: React.FC<{
+    item: TimelineItem;
+    expanded: boolean;
+    onToggle: () => void;
+    onOpen: (item: TimelineItem) => void;
+    onEditInForm: (item: TimelineItem) => void;
+}> = ({ item, expanded, onToggle, onOpen, onEditInForm }) => {
     const { t, dates } = useTimelineEnv();
     const styles = useStyles();
     const { details, files, loading } = useItemDetails(item, expanded);
@@ -540,9 +744,9 @@ const MessagePanel: React.FC<{ item: TimelineItem; expanded: boolean; onToggle: 
     ].filter(Boolean).join(" · ");
 
     return (
-        <div className={mergeClasses(styles.message, expanded && styles.messageOpen)}>
+        <div className={styles.message}>
             <button type="button" className={styles.messageHead} aria-expanded={expanded} onClick={onToggle}>
-                <Avatar name={sender?.name ?? item.typeLabel} size={28} color="colorful" />
+                <Avatar name={sender?.name ?? item.typeLabel} size={32} color="colorful" />
                 <span className={styles.messageText}>
                     <span className={styles.messageTop}>
                         <span className={styles.messageFrom}>{sender?.name ?? item.typeLabel}</span>
@@ -563,142 +767,27 @@ const MessagePanel: React.FC<{ item: TimelineItem; expanded: boolean; onToggle: 
                     <Body item={item} inlineImages={inlineImages} collapseQuoted />
                     {loading && !details && <Spinner size="tiny" />}
                     {details && details.attachments.length > 0 && (
-                        <div className={styles.attachments}>
+                        <div className={styles.attachments} style={{ paddingLeft: 0 }}>
                             {details.attachments.map((a) => (
                                 <AttachmentTile key={a.id} file={a} preview={files[a.id]} onDownload={() => void download(a)} />
                             ))}
                         </div>
                     )}
-                    <div>
+                    <div className={styles.messageActions}>
                         <Button size="small" appearance="subtle" icon={<OpenRegular />} onClick={() => onOpen(item)}>
                             {t("openRecord")}
                         </Button>
+                        {/* A draft in the conversation */}
+                        {canEdit(item) && (
+                            <Button size="small" appearance="subtle" icon={<EditRegular />} onClick={() => onEditInForm(item)}>
+                                {t("editInForm")}
+                            </Button>
+                        )}
                     </div>
                 </div>
             )}
         </div>
     );
-};
-
-const TypeChip: React.FC<{ item: TimelineItem }> = ({ item }) => {
-    const styles = useStyles();
-    const v = useTypeVisual(item.entity);
-    return (
-        <span className={styles.typeChip} style={{ backgroundColor: v.bg, color: v.fg }}>
-            <span className={styles.typeIcon} style={{ backgroundColor: v.strong, color: tokens.colorNeutralForegroundInverted }}>
-                <v.Icon />
-            </span>
-            {item.typeLabel}
-        </span>
-    );
-};
-
-/** Shown next to the type while work is unfinished; once closed, the date line says how it ended */
-const StatusText: React.FC<{ item: TimelineItem }> = ({ item }) => {
-    const { t } = useTimelineEnv();
-    const styles = useStyles();
-    if (item.kind === "note") return null;
-    if (item.isOverdue) return <span className={mergeClasses(styles.status, styles.statusOverdue)}>{t("statusOverdue")}</span>;
-    if (!isOpenState(item.state)) return null;
-    return <span className={styles.status}>{item.statusLabel ?? t("statusOpen")}</span>;
-};
-
-interface KeyDate {
-    Icon: FluentIcon;
-    text: string;
-    relative?: string;
-    note?: string;
-    danger?: boolean;
-}
-
-/**
- * The date that matters for this item, in words: when a meeting is held, when work is due or was done,
- * when an email was sent or received, when a note was written.
- */
-function keyDate(item: TimelineItem, rule: string, t: Translate, dates: DateEnv): KeyDate {
-    const at = (d: Date) => ({ relative: formatRelative(dates, d) });
-    if (item.kind === "note") return { Icon: EditRegular, text: t("createdAt", formatLong(dates, item.createdOn)), ...at(item.createdOn) };
-    if (item.entity === "email") {
-        const out = item.direction === "out";
-        return { Icon: out ? ArrowUpRightRegular : ArrowDownLeftRegular, text: t(out ? "sentAt" : "receivedAt", formatLong(dates, item.createdOn)), ...at(item.createdOn) };
-    }
-    if (rule === "start" && item.scheduledStart) {
-        return { Icon: CalendarLtrRegular, text: formatSpan(dates, item.scheduledStart, item.scheduledEnd), ...at(item.scheduledStart) };
-    }
-    if (rule !== "created" && !isOpenState(item.state)) {
-        const when = item.actualEnd ?? item.modifiedOn ?? item.createdOn;
-        if (item.state === "canceled") return { Icon: DismissCircleRegular, text: t("canceledAt", formatLong(dates, when)), ...at(when) };
-        const late = item.scheduledEnd && item.actualEnd && item.actualEnd.getTime() - item.scheduledEnd.getTime() > 60000;
-        return {
-            Icon: CheckmarkCircleRegular,
-            text: t("completedAt", formatLong(dates, when)),
-            ...at(when),
-            note: late && item.scheduledEnd ? t("wasDue", formatShortDate(dates, item.scheduledEnd)) : undefined,
-        };
-    }
-    if (rule !== "created" && item.scheduledEnd) {
-        const due = formatLong(dates, item.scheduledEnd);
-        return { Icon: ClockRegular, text: item.isOverdue ? t("overdueSince", due) : t("dueOn", due), ...at(item.scheduledEnd), danger: item.isOverdue };
-    }
-    return { Icon: EditRegular, text: t("createdAt", formatLong(dates, item.createdOn)), ...at(item.createdOn) };
-}
-
-const Headline: React.FC<{ item: TimelineItem }> = ({ item }) => {
-    const { t, dates, config } = useTimelineEnv();
-    const styles = useStyles();
-    const key = keyDate(item, dateRule(item.entity, config), t, dates);
-    return (
-        <div className={styles.headline}>
-            <div className={mergeClasses(styles.keyDate, key.danger && styles.keyDateDanger)}>
-                <key.Icon className={mergeClasses(styles.keyIcon, key.danger && styles.keyIconDanger)} aria-hidden />
-                <span>{key.text}</span>
-                {key.relative && <span className={styles.keyRelative}>· {key.relative}</span>}
-            </div>
-            {key.note && <div className={styles.keyNote}>{key.note}</div>}
-            <PeopleLine item={item} />
-        </div>
-    );
-};
-
-const Names: React.FC<{ parties: PartyRef[] }> = ({ parties }) => {
-    const styles = useStyles();
-    const shown = parties.slice(0, 3);
-    return (
-        <>
-            {shown.map((p, i) => (
-                <span key={`${p.id ?? p.name}-${i}`} className={styles.person} title={p.address ?? p.name}>
-                    <Avatar name={p.name} size={20} color="colorful" />
-                    {p.name}
-                </span>
-            ))}
-            {parties.length > shown.length && <span className={styles.peopleMore}>+{parties.length - shown.length}</span>}
-        </>
-    );
-};
-
-/** Who it's between, for emails, calls and meetings. Tasks and notes have no people line; their owner is a detail. */
-const PeopleLine: React.FC<{ item: TimelineItem }> = ({ item }) => {
-    const { t } = useTimelineEnv();
-    const styles = useStyles();
-    if (item.kind === "note") return null;
-    if (item.from.length > 0 && item.to.length > 0) {
-        return (
-            <div className={styles.people}>
-                <Names parties={item.from} />
-                <ArrowRightRegular className={styles.peopleArrow} aria-label={t("to")} />
-                <Names parties={item.to} />
-            </div>
-        );
-    }
-    if (item.attendees.length > 0) {
-        return (
-            <div className={styles.people}>
-                <span className={styles.peopleMore}>{t("with")}</span>
-                <Names parties={item.attendees} />
-            </div>
-        );
-    }
-    return null;
 };
 
 /** Facts that can matter but aren't the point: owner, configured columns, Cc, record dates. Small and last. */
@@ -715,8 +804,8 @@ const Details: React.FC<{ item: TimelineItem; details?: ItemDetails }> = ({ item
         rows.push({ label: t("dueLabel"), value: formatFull(dates, item.scheduledEnd) });
     }
     if (item.durationMinutes && !meeting) rows.push({ label: t("duration"), value: formatDuration(item.durationMinutes, dates.locale) });
-    // Owner and schedule are already covered above
-    details?.fields.filter((f) => !SCHEDULE_COLUMNS.has(f.name) && f.name !== "ownerid").forEach((f) => rows.push({ label: f.label, value: f.value }));
+    // Owner, schedule, status and priority are already covered above
+    details?.fields.filter((f) => !HIDDEN_COLUMNS.has(f.name)).forEach((f) => rows.push({ label: f.label, value: f.value }));
     const created = formatFull(dates, item.createdOn);
     rows.push({ label: t("detailCreated"), value: item.createdBy?.name ? t("byPerson", created, item.createdBy.name) : created });
     if (item.modifiedOn && Math.abs(item.modifiedOn.getTime() - item.createdOn.getTime()) > 60000) {
@@ -724,8 +813,8 @@ const Details: React.FC<{ item: TimelineItem; details?: ItemDetails }> = ({ item
     }
 
     return (
-        <div className={styles.meta}>
-            <span className={styles.sectionTitle}>{t("details")}</span>
+        <div className={styles.section}>
+            <SectionHeader label={t("details")} />
             <dl className={styles.metaList}>
                 {rows.map((r) => (
                     <React.Fragment key={r.label}>
@@ -739,14 +828,13 @@ const Details: React.FC<{ item: TimelineItem; details?: ItemDetails }> = ({ item
 };
 
 const Body: React.FC<{ item: TimelineItem; inlineImages: Record<string, string>; collapseQuoted?: boolean }> = ({ item, inlineImages, collapseQuoted }) => {
-    const { t } = useTimelineEnv();
     const styles = useStyles();
-    if (!item.body) return <span className={styles.empty}>{t("noContent")}</span>;
+    if (!item.body) return null;
     if (item.bodyIsHtml) return <HtmlFrame html={item.body} inlineImages={inlineImages} title={item.title} collapseQuoted={collapseQuoted} />;
     if (/^https?:\/\//.test(item.body.trim())) {
         return <HtmlFrame html={`<a href="${escapeHtml(item.body.trim())}">${escapeHtml(item.body.trim())}</a>`} title={item.title} />;
     }
-    return <div className={styles.plainBody}>{item.body}</div>;
+    return <div className={styles.text}>{item.body}</div>;
 };
 
 function formatSize(bytes: number | undefined, locale: string): string {

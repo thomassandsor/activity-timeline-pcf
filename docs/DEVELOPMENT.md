@@ -20,7 +20,7 @@ src/ActivityTimeline/            The PCF control (React virtual control, Fluent 
     data/dataSource.ts           Data source contract, MergedPager (merges paged queries in date order) and
                                  HydratingPager (loads bodies and participants for shown items only)
     ui/                          React components
-    strings/                     Generated resx files: English (1033), Norwegian Bokmål (1044), Swedish (1053)
+    strings/                     Generated resx files: English (1033), Norwegian Bokmål (1044), Swedish (1053), Danish (1030)
   scripts/strings.mjs            Every text in the control, in all languages
 solution/                        Solution project; a Release build makes the managed and unmanaged zips
 scripts/resx.mjs                 Writes the resx files from a string table
@@ -36,7 +36,7 @@ npm run lint
 ```
 
 The test harness has no Dataverse, so it shows built-in sample data. It also only loads the last language file in
-the manifest, so its texts appear in Swedish.
+the manifest, so its texts appear in Danish.
 
 To try it in a real environment, push a development build into your own environment's solution:
 
@@ -58,7 +58,7 @@ The output in `solution/bin/Release/` is `ActivityTimeline.zip` (unmanaged) and 
 ## Texts and languages
 
 Every text lives in one table in `src/ActivityTimeline/scripts/strings.mjs`. Each row is
-`[English, Norwegian, Swedish]`; keys starting with a capital letter are shown to makers in the form designer, the
+`[English, Norwegian, Swedish, Danish]`; keys starting with a capital letter are shown to makers in the form designer, the
 rest to users. After editing, run:
 
 ```powershell

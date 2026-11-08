@@ -52,12 +52,12 @@ export interface AdvancedConfig {
     dateRules?: Record<string, DateRule>;
     /** Filters applied when the timeline opens */
     defaultFilters?: { types?: string[]; status?: StatusFilter; onlyMine?: boolean };
-    /** Number of weeks of history in the activity rhythm (8–52). Default 12. */
-    rhythmWeeks?: number;
     /** Hide the inline note composer even when notes are shown */
     hideNoteComposer?: boolean;
     /** Show remote images in email bodies without asking. Default false. */
     loadRemoteImages?: boolean;
+    /** How many of the newest activities a search looks through. Default 500. */
+    searchLimit?: number;
 }
 
 export interface TimelineConfig {
@@ -75,6 +75,7 @@ export interface TimelineConfig {
     density: Density;
     showOverview: boolean;
     threadEmails: boolean;
+    searchLimit: number;
     advanced: AdvancedConfig;
     /** Problems found while reading the configuration, shown to makers */
     warnings: string[];
@@ -165,6 +166,7 @@ export function parseConfig(raw: RawConfig): TimelineConfig {
         density: raw.density === "compact" ? "compact" : "comfortable",
         showOverview: flag(raw.showOverview, true),
         threadEmails: flag(raw.threadEmails, true),
+        searchLimit: clamp(advanced.searchLimit, 10, 5000, 500),
         advanced,
         warnings,
     };

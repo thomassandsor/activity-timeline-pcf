@@ -1,5 +1,5 @@
 import { FeedSort, SortOrder } from "../model/config";
-import { ActivityTypeInfo, AttachmentRef, Counts, ItemDetails, PageResult, RhythmRow, TimelineFilters, TimelineItem } from "../model/types";
+import { ActivityTypeInfo, AttachmentRef, Counts, EditValues, ItemChanges, ItemDetails, PageResult, SearchLimit, StateLabels, TimelineFilters, TimelineItem } from "../model/types";
 
 export interface NewNote {
     title?: string;
@@ -30,17 +30,21 @@ export interface TimelineDataSource {
     readonly currentUserId: string;
     /** Totals per type, open and overdue, counted by Dataverse */
     getCounts(): Promise<Counts>;
-    /** Items between two instants for the activity-per-week chart, placed like the feed places them */
-    getRhythm(sort: FeedSort, from: Date, to: Date): Promise<RhythmRow[]>;
     openFeed(filters: TimelineFilters, sort: FeedSort): FeedPagers;
     /** Loads one item, e.g. when the overview points at something that isn't loaded in the feed */
     getItem(entity: string, id: string): Promise<TimelineItem | undefined>;
     getDetails(item: TimelineItem): Promise<ItemDetails>;
     getFileContent(file: AttachmentRef): Promise<FileContent>;
     getTypeLabels(entities: string[]): Promise<ActivityTypeInfo[]>;
+    /** The words for a state. Empty where there's nowhere to get them, and the control's own are used. */
+    getStateLabels(): Promise<StateLabels>;
     createNote(note: NewNote): Promise<void>;
     completeActivity(item: TimelineItem): Promise<void>;
+    /** Saves only the changes, and updates the loaded item to match */
+    updateItem(item: TimelineItem, before: EditValues, changes: ItemChanges): Promise<void>;
     openRecord(entity: string, id: string): Promise<void>;
+    /** Opens the real form beside the page, where the app supports that. Resolves when the user closes it. */
+    openRecordPanel(entity: string, id: string): Promise<void>;
     /** Opens a create form with the current record as regarding. Resolves true when the user saved. */
     createActivity(entity: string): Promise<boolean>;
     recordUrl(entity: string, id: string): string | undefined;
@@ -133,6 +137,27 @@ export class MergedPager implements FeedPager {
         if (!limiting) return all;
         const cutoff = limiting.buffer.length > 0 ? this.rank(limiting.buffer[limiting.buffer.length - 1]) : Infinity;
         return all.filter((i) => this.rank(i) >= cutoff);
+    }
+}
+
+export interface SearchHits {
+    /** In feed order */
+    items: TimelineItem[];
+    limit?: SearchLimit;
+}
+
+/** Runs a search once, on the first load; loading more only reveals what it already found. */
+export class SearchPager implements FeedPager {
+    private hits?: Promise<SearchHits>;
+    private shown = 0;
+
+    constructor(private readonly search: () => Promise<SearchHits>) {}
+
+    public async loadMore(count: number): Promise<PageResult> {
+        this.hits ??= this.search();
+        const { items, limit } = await this.hits;
+        this.shown = Math.min(items.length, this.shown + count);
+        return { items: items.slice(0, this.shown), hasMore: this.shown < items.length, searchLimit: limit };
     }
 }
 

@@ -14,12 +14,16 @@ conversations, and preview any activity without leaving the form.
 - **Preview panel** built around the content: the title, the one date that matters, who it's between, the
   description and attachments. Owner, priority and other columns sit in a small *Details* list at the bottom. Step
   through items with ↑ ↓.
-- **Clear status:** typed, coloured icons; overdue items are marked red and counted in a one-line summary that
-  filters the feed when clicked.
-- **Filters on demand:** search, activity types with counts, status, date, "Only mine" and an activity-per-week
-  chart. They stay hidden until the user opens them.
+- **Work on it right there:** open tasks, calls, appointments and notes can be changed in the panel and save as
+  they're changed. Emails and anything more complex open their real form where the panel was. Closing an activity
+  always asks first.
+- **Clear status:** typed, coloured icons that stay the same in every state, and a status pill on every item with
+  the same words for every type, taken from Dataverse. Overdue items are marked red and counted in a one-line
+  summary that filters the feed when clicked.
+- **Filters on demand:** search in titles and content, activity types with counts, status, date and "Only mine".
+  They stay hidden until the user opens them.
 - **Fast on busy records:** loads 20 items at a time and the next 20 as the user scrolls.
-- **English, Norwegian and Swedish**, following each user's language in Dataverse.
+- **English, Norwegian, Swedish and Danish**, following each user's language in Dataverse.
 
 Everything shown is data from Dataverse; nothing is generated or summarised.
 
@@ -86,7 +90,7 @@ Which activities appear:
 | Items per page | 20 | 5–100. Older items load as the user scrolls |
 | Height (px) | 0 | 0: the timeline grows with its content and the page scrolls, like the built-in timeline. A number gives a fixed height with its own scroll |
 | Default density | Comfortable | *Comfortable* shows a preview of each item's content; *Compact* shows one line per item. Users can switch |
-| Show overview | Yes | Shows the summary line and the activity-per-week chart |
+| Show overview | Yes | Shows the summary line of overdue and open items |
 | Group email conversations | Yes | Shows replies and forwards with the same subject as one conversation |
 | Advanced configuration (JSON) | (empty) | Optional fine-tuning; see below |
 
@@ -107,9 +111,9 @@ All keys are optional:
     "new_servicevisit": "start"
   },
   "defaultFilters": { "status": "open", "onlyMine": false },
-  "rhythmWeeks": 12,
   "hideNoteComposer": false,
-  "loadRemoteImages": false
+  "loadRemoteImages": false,
+  "searchLimit": 500
 }
 ```
 
@@ -119,9 +123,9 @@ All keys are optional:
 | `typeStyles` | Colour, icon and label per table. `color`: `blue green marigold grape teal cranberry steel pumpkin lavender forest cornflower brown pink anchor`. `icon`: `mail call task calendar note service chat document person megaphone box wrench star receipt shield` |
 | `dateRules` | Which date places a table's activities when sorting by activity date: `created`, `start`, `due` or `completed` (see below) |
 | `defaultFilters` | Filters applied when the timeline opens: `types` (list of logical names), `status` (`all`, `open`, `overdue`, `completed`), `onlyMine` |
-| `rhythmWeeks` | Weeks of history in the activity-per-week chart, 8–52. Default 12 |
 | `hideNoteComposer` | Show notes but don't let users write them here |
 | `loadRemoteImages` | Show remote images in emails without asking. Off by default, because remote images can track when an email is read |
+| `searchLimit` | How many of the newest activities a search looks through, 10–5000. Default 500. Notes from the same period are included. When a record has more, the results say how far back the search reached |
 
 If the JSON has a problem, the timeline shows a warning at the top explaining what to fix. Every user sees it, so
 check the form before you publish.
@@ -151,16 +155,45 @@ first, from the **⋯** menu. Their choice is remembered per table.
 - **Preview:** click an item to preview it. In the preview, **↑ ↓** (or **J K**) move to the previous or next
   item, **O** opens the record and **Esc** closes.
 - **List:** **↑ ↓** move between items, **Enter** previews, **O** opens and **/** opens search and filters.
+- **Search:** looks in titles and content. It runs when you press **Search** or **Enter** (at least 2 characters),
+  not while you type.
 - **Quick actions:** hover an item to mark it complete or open it.
 - **Notes:** **New → Note** writes a note inline, with an optional file; **Ctrl + Enter** saves.
 - **New since your last visit:** a dot marks items others added since you last opened the record.
 
+## Working on an item
+
+The panel has no edit mode and no Save button. On anything still open, what can be changed looks like a field, and it
+saves when you're done with that field. Closed activities are read-only in Dataverse, so they show the same layout as
+plain text.
+
+| Type | In the panel |
+|---|---|
+| Task, phone call | Title, description, status, due date and priority |
+| Appointment | Title, description, status, start and end, and priority. Moving the start moves the end with it |
+| Note | Title and text, at any time |
+| Draft email, custom activities, everything else | **Edit in form** opens the real form where the panel was, and the panel returns when it closes. Custom activities can also be marked complete |
+
+- **Closing asks first:** completing or canceling an activity, from the status list, **Mark complete** in the panel or
+  the check mark on a card, opens a dialog. **Keep open** is the default button, so Enter or Esc changes nothing.
+- **Status:** the pill is the Status column of the Activity table, so Dataverse translates it and it reads the same on
+  every type. While an item is open, its status reason sits beside the pill if that state has more than one. Closed work
+  shows only the pill.
+- **Closing** saves only the Status, and Dataverse sets the table's default status reason. An incoming call closed here
+  is stored as *Made*; the form can still set *Received*.
+- **Saves** send only what changed. If two people change the same column, the last save wins, without a warning.
+- **Plug-ins, flows and table business rules** run as usual, and their errors show in the panel. **Form scripts and
+  form-level business rules don't run**, because no form is open. Where those must run on a table, use the form.
+- Text with formatting and the dates of all-day appointments stay read-only in the panel, with a way to the form.
+- The status list and the form panel use parts of the app that the PCF API doesn't offer. Where they're missing, the
+  status is just shown and the record opens normally.
+
 ## Languages
 
-The timeline shows English, Norwegian Bokmål or Swedish, following the language each user picks in Dataverse
+The timeline shows English, Norwegian Bokmål, Swedish or Danish, following the language each user picks in Dataverse
 (**Settings → Personal Options → Languages**). Users with another language get the organisation's base language
-if it's one of these three, and English otherwise. Dates, times and numbers are formatted for the user's language,
-in their Dataverse time zone.
+if it's one of these four, and English otherwise. Dates, times and numbers follow each user's Formats setting in
+Dataverse, in their Dataverse time zone.
 
 Table and column names, status labels and choice values come from Dataverse, so they follow the environment's
 own translations.
@@ -173,7 +206,7 @@ request (see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)).
 - **Data access:** everything is read and written through the Dataverse Web API with the signed-in user's own
   privileges. Users only see what they already have access to.
 - **No outside calls:** the control calls no external services and sends no telemetry.
-- **Writes:** it only writes when the user acts, by saving a note or marking an activity complete.
+- **Writes:** it only writes when the user acts: by saving a note, or by changing or closing an activity.
 - **Email bodies:** shown in a sandboxed frame that can't run scripts. Remote images are blocked until the user
   chooses to show them.
 - **Stored in the browser:** the user's view preferences per table (sort, density, filters) and the time they
@@ -186,8 +219,7 @@ A first load sends about ten small requests:
 - one short query per kind of date;
 - one query for the shown items' details.
 
-The activity-per-week chart only loads when the filter panel is opened. Kinds of activities the record doesn't
-have aren't queried.
+Kinds of activities the record doesn't have aren't queried.
 
 ## Known limitations
 

@@ -10,7 +10,7 @@
     <Descriptions>
       <Description description="A configurable timeline of activities and notes for model-driven apps. https://github.com/thomassandsor/activity-timeline-pcf" languagecode="1033" />
     </Descriptions>
-    <Version>0.1.10</Version>
+    <Version>0.2.8</Version>
     <!-- Solution Package Type: Unmanaged(0)/Managed(1)/Both(2)-->
     <Managed>2</Managed>
     <Publisher>

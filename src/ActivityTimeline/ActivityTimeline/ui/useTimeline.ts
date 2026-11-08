@@ -2,7 +2,7 @@ import * as React from "react";
 import { FeedPager, NewNote, TimelineDataSource } from "../data/dataSource";
 import { Density, FeedSort, SortColumn, SortOrder, TimelineConfig } from "../model/config";
 import { buildEntries } from "../model/feed";
-import { Counts, emptyFilters, FeedEntry, PageResult, RecordContext, TimelineFilters, TimelineItem } from "../model/types";
+import { Counts, EditValues, emptyFilters, FeedEntry, ItemChanges, PageResult, RecordContext, SearchLimit, TimelineFilters, TimelineItem } from "../model/types";
 
 export interface TimelineState {
     counts?: Counts;
@@ -12,6 +12,8 @@ export interface TimelineState {
     /** Open items still ahead, soonest first; shown above the feed when sorting by activity date */
     upcoming: FeedEntry[];
     upcomingHasMore: boolean;
+    /** Set when the search on screen only looked through the newest activities */
+    searchLimit?: SearchLimit;
     loading: "initial" | "more" | "refresh" | undefined;
     error?: string;
     filters: TimelineFilters;
@@ -36,6 +38,7 @@ export interface TimelineActions {
     /** Sort column for activities and/or order, chosen by the user */
     setSort: (update: { activities?: SortColumn; order?: SortOrder }) => void;
     complete: (item: TimelineItem) => Promise<void>;
+    update: (item: TimelineItem, before: EditValues, changes: ItemChanges) => Promise<void>;
     createNote: (note: NewNote) => Promise<void>;
     createActivity: (entity: string) => Promise<void>;
 }
@@ -61,6 +64,11 @@ const PREFIX = "rsn-activitytimeline";
 export function feedSort(config: TimelineConfig, activities: SortColumn, order: SortOrder): FeedSort {
     const notes = activities !== config.sortBy && (activities === "createdon" || activities === "modifiedon") ? activities : config.notesSortBy;
     return { activities, notes, order };
+}
+
+/** Dataverse errors, plug-in messages among them, are plain objects with a message rather than Errors */
+export function errorMessage(e: unknown): string {
+    return e instanceof Error ? e.message : typeof e === "object" && e && "message" in e ? String((e as { message: unknown }).message) : String(e);
 }
 
 function readJson<T>(key: string): T | undefined {
@@ -128,6 +136,7 @@ export function useTimeline(source: TimelineDataSource, config: TimelineConfig, 
                 ...s,
                 entries,
                 hasMore: page.hasMore,
+                searchLimit: page.searchLimit,
                 ...(upcoming ? { upcoming: buildEntries(upcoming.items, false, "asc"), upcomingHasMore: upcoming.hasMore } : {}),
                 loading: undefined,
                 error: undefined,
@@ -143,15 +152,20 @@ export function useTimeline(source: TimelineDataSource, config: TimelineConfig, 
 
     const fail = React.useCallback((request: number, e: unknown) => {
         if (request !== requestRef.current) return;
-        const message = e instanceof Error ? e.message : typeof e === "object" && e && "message" in e ? String((e as { message: unknown }).message) : String(e);
-        setState((s) => ({ ...s, loading: undefined, error: message }));
+        setState((s) => ({
+            ...s,
+            loading: undefined,
+            error: errorMessage(e),
+            // What was on screen before a failed search would look like its results
+            ...(s.filters.search ? { entries: [], hasMore: false, upcoming: [], upcomingHasMore: false } : {}),
+        }));
     }, []);
 
     const reload = React.useCallback(
         (filters: TimelineFilters, mode: "initial" | "refresh", withCounts: boolean) => {
             if (!record) return;
             const request = ++requestRef.current;
-            setState((s) => ({ ...s, loading: mode, error: undefined }));
+            setState((s) => ({ ...s, loading: mode, error: undefined, searchLimit: undefined }));
             // Counts first: the feed uses them to skip queries for kinds of activity the record doesn't have
             if (withCounts) {
                 source.getCounts()
@@ -231,6 +245,19 @@ export function useTimeline(source: TimelineDataSource, config: TimelineConfig, 
             complete: async (item) => {
                 await source.completeActivity(item);
                 reload(filtersRef.current, "refresh", true);
+            },
+            update: async (item, before, changes) => {
+                await source.updateItem(item, before, changes);
+                // A new date or last-updated time can move the item, and change what's overdue. Otherwise it stays where it is,
+                // and the updated item is all that's needed: the page doesn't reload or lose its place.
+                const { activities, notes } = sortRef.current;
+                const sortedBy = item.kind === "note" && activities !== "eventdate" ? notes : activities;
+                const closed = !!changes.status && changes.status.state !== 0 && changes.status.state !== 3;
+                if (changes.start !== undefined || changes.end !== undefined || closed || sortedBy === "modifiedon") {
+                    reload(filtersRef.current, "refresh", true);
+                } else {
+                    setState((s) => ({ ...s, entries: [...s.entries], upcoming: [...s.upcoming] }));
+                }
             },
             createNote: async (note) => {
                 await source.createNote(note);

@@ -7,13 +7,14 @@ import {
 import { AddRegular, ArrowClockwiseRegular, FilterRegular, MoreHorizontalRegular, SaveRegular, SearchRegular } from "@fluentui/react-icons";
 import { TimelineDataSource } from "../data/dataSource";
 import { SORT_COLUMNS, SortColumn, TimelineConfig } from "../model/config";
-import { DateEnv } from "../model/dates";
-import { groupByDay, rhythmWindow } from "../model/feed";
-import { FeedEntry, RecordContext, RhythmRow, TimelineItem } from "../model/types";
+import { DateEnv, formatShortDate } from "../model/dates";
+import { groupByDay } from "../model/feed";
+import { EditValues, FeedEntry, ItemChanges, RecordContext, StateLabels, TimelineItem } from "../model/types";
+import { useConfirmClose } from "./ConfirmClose";
 import { Feed, FeedSkeleton } from "./Feed";
 import { ActiveFilters, activeFilterCount, FilterPanel, TypeCount } from "./FilterBar";
 import { NoteComposer } from "./NoteComposer";
-import { RHYTHM_WEEKS_AHEAD, SummaryLine } from "./Overview";
+import { SummaryLine } from "./Overview";
 import { PreviewDrawer } from "./PreviewDrawer";
 import { TimelineContext, TimelineEnv, Translate, useTimelineEnv, useTypeVisual } from "./TimelineContext";
 import { useTimeline } from "./useTimeline";
@@ -66,6 +67,11 @@ const useStyles = makeStyles({
         scrollbarGutter: "stable",
     },
     message: { marginBottom: tokens.spacingVerticalS },
+    searchLimit: {
+        marginBottom: tokens.spacingVerticalS,
+        fontSize: tokens.fontSizeBase200,
+        color: tokens.colorNeutralForeground3,
+    },
     empty: {
         display: "flex",
         flexDirection: "column",
@@ -108,10 +114,13 @@ export interface TimelineProps {
     theme?: Theme;
 }
 
+const STATE_KEYS = { statusOpen: "open", statusScheduled: "scheduled", statusCompleted: "completed", statusCanceled: "canceled" } as const;
+
 export const Timeline: React.FC<TimelineProps> = (props) => {
     const styles = useStyles();
     const { source, config, dates, t, record } = props;
     const [typeLabels, setTypeLabels] = React.useState<Record<string, string>>({});
+    const [stateLabels, setStateLabels] = React.useState<StateLabels>({});
 
     // Display names for configured and creatable types (counts carry labels for everything else)
     React.useEffect(() => {
@@ -123,15 +132,20 @@ export const Timeline: React.FC<TimelineProps> = (props) => {
             .catch(() => undefined);
     }, [record, source, config]);
 
+    React.useEffect(() => {
+        if (record) source.getStateLabels().then(setStateLabels).catch(() => undefined);
+    }, [record, source]);
+
     const env = React.useMemo<TimelineEnv>(
         () => ({
-            t,
+            // Dataverse's words for a state, wherever they're shown, so a language enabled there needs nothing from this control
+            t: (key, ...args) => (key in STATE_KEYS ? stateLabels[STATE_KEYS[key as keyof typeof STATE_KEYS]] : undefined) ?? t(key, ...args),
             dates,
             config,
             source,
             typeLabel: (entity, fallback) => config.advanced.typeStyles?.[entity]?.label ?? typeLabels[entity] ?? fallback ?? entity,
         }),
-        [t, dates, config, source, typeLabels],
+        [t, dates, config, source, typeLabels, stateLabels],
     );
     return (
         <FluentProvider theme={props.theme} className={styles.provider}>
@@ -195,27 +209,10 @@ const TimelineView: React.FC<{ record?: RecordContext }> = ({ record }) => {
             .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
     }, [state.counts, state.filters.types, config, typeLabel]);
 
-    // Activity per week: only loaded while the filter panel is open
-    const weeksBack = Math.min(52, Math.max(8, config.advanced.rhythmWeeks ?? 12));
-    const [rhythm, setRhythm] = React.useState<RhythmRow[]>();
-    React.useEffect(() => {
-        if (!record || !filtersOpen || !config.showOverview) return;
-        let current = true;
-        const range = rhythmWindow(dates, weeksBack, RHYTHM_WEEKS_AHEAD);
-        source
-            .getRhythm(state.sort, range.from, range.to)
-            .then((rows) => current && setRhythm(rows))
-            .catch(() => current && setRhythm(undefined));
-        return () => {
-            current = false;
-        };
-        // Counts change on refresh, which is also when the chart should be counted again
-    }, [record, filtersOpen, config.showOverview, source, dates, weeksBack, state.sort, state.counts]);
-
-    // An item that isn't loaded in the feed (older, or filtered out)
-    const [extraEntry, setExtraEntry] = React.useState<FeedEntry>();
+    // An item that isn't loaded in the feed (older, or filtered out), for the selection it stands in for
+    const [extra, setExtra] = React.useState<{ forKey: string; entry: FeedEntry }>();
     const selectedIndex = state.selectedKey ? allEntries.findIndex((e) => e.key === state.selectedKey) : -1;
-    const selectedEntry = selectedIndex >= 0 ? allEntries[selectedIndex] : extraEntry?.key === state.selectedKey ? extraEntry : undefined;
+    const selectedEntry = selectedIndex >= 0 ? allEntries[selectedIndex] : extra?.forKey === state.selectedKey ? extra?.entry : undefined;
 
     /** Previews an entry by its key, or the entry that contains an item key (a message inside a conversation). */
     const select = React.useCallback(
@@ -237,7 +234,7 @@ const TimelineView: React.FC<{ record?: RecordContext }> = ({ record }) => {
             const split = key.indexOf(":");
             source
                 .getItem(key.substring(0, split), key.substring(split + 1))
-                .then((item) => setExtraEntry(item ? { type: "item", key: item.key, item } : undefined))
+                .then((item) => setExtra(item ? { forKey: item.key, entry: { type: "item", key: item.key, item } } : undefined))
                 .catch(() => notify(t("actionFailed"), "error"));
         },
         [allEntries, actions, source, notify, t],
@@ -262,6 +259,43 @@ const TimelineView: React.FC<{ record?: RecordContext }> = ({ record }) => {
         [actions, notify, t],
     );
 
+    const [confirmDialog, confirmClose] = useConfirmClose();
+
+    const saveEdit = React.useCallback(
+        async (item: TimelineItem, before: EditValues, changes: ItemChanges) => {
+            // The preview stays open on the item even if a new date moves it out of the loaded pages
+            setExtra({ forKey: item.key, entry: { type: "item", key: item.key, item } });
+            await actions.update(item, before, changes);
+        },
+        [actions],
+    );
+
+    const editInForm = React.useCallback(
+        async (item: TimelineItem) => {
+            const { selectedKey, focusKey } = state;
+            // The preview would cover the form, so it steps aside and comes back when the form closes
+            actions.select(undefined);
+            try {
+                await source.openRecordPanel(item.entity, item.id);
+            } catch {
+                notify(t("actionFailed"), "error");
+            }
+            // One read to see if anything changed; the feed only reloads if it did
+            const fresh = await source.getItem(item.entity, item.id).catch(() => undefined);
+            if (!fresh) {
+                actions.refresh();
+                return;
+            }
+            if (fresh.modifiedOn?.getTime() !== item.modifiedOn?.getTime()) {
+                // A changed subject can take a draft out of its conversation; then the preview shows the draft
+                setExtra({ forKey: selectedKey ?? fresh.key, entry: { type: "item", key: fresh.key, item: fresh } });
+                actions.refresh();
+            }
+            actions.select(selectedKey, focusKey);
+        },
+        [state, actions, source, notify, t],
+    );
+
     const copyLink = React.useCallback(
         (item: TimelineItem) => {
             const url = source.recordUrl(item.entity, item.id);
@@ -279,6 +313,8 @@ const TimelineView: React.FC<{ record?: RecordContext }> = ({ record }) => {
     // "/" opens search, like most modern web apps
     const onKeyDown = (e: React.KeyboardEvent) => {
         const target = e.target as HTMLElement;
+        // Not from the preview or a dialog, which sit outside the timeline and have keys of their own
+        if (!e.currentTarget.contains(target)) return;
         if (e.key === "/" && !target.closest("input, textarea, [contenteditable='true']")) {
             e.preventDefault();
             openFilters();
@@ -424,7 +460,7 @@ const TimelineView: React.FC<{ record?: RecordContext }> = ({ record }) => {
                         filters={state.filters}
                         types={typeCounts}
                         total={total}
-                        rhythm={config.showOverview && rhythm ? { rows: rhythm, weeksBack } : undefined}
+                        searching={state.loading === "refresh" && !!state.filters.search}
                         onChange={actions.setFilters}
                         onClear={actions.clearFilters}
                         onClose={() => setFiltersOpen(false)}
@@ -470,13 +506,19 @@ const TimelineView: React.FC<{ record?: RecordContext }> = ({ record }) => {
                         {state.error && (
                             <MessageBar intent="error" className={styles.message}>
                                 <MessageBarBody>
-                                    <MessageBarTitle>{t("errorLoading")}</MessageBarTitle>
-                                    {state.error}
+                                    <MessageBarTitle>{state.filters.search ? t("searchFailed") : t("errorLoading")}</MessageBarTitle>
+                                    {state.filters.search ? t("searchFailedHint") : state.error}
                                 </MessageBarBody>
                                 <Button size="small" onClick={actions.refresh}>
                                     {t("retry")}
                                 </Button>
                             </MessageBar>
+                        )}
+
+                        {state.searchLimit && (
+                            <div className={styles.searchLimit} role="status">
+                                {t("searchLimited", state.searchLimit.count, formatShortDate(dates, state.searchLimit.from))}
+                            </div>
                         )}
 
                         {state.loading === "initial" ? (
@@ -507,7 +549,7 @@ const TimelineView: React.FC<{ record?: RecordContext }> = ({ record }) => {
                                 scrollRoot={fixedHeight ? scrollEl : null}
                                 onSelect={select}
                                 onOpen={open}
-                                onComplete={(item) => void complete(item)}
+                                onComplete={(item) => confirmClose({ title: item.title, canceled: false, run: () => complete(item) })}
                                 onLoadMore={actions.loadMore}
                             />
                         )}
@@ -528,8 +570,11 @@ const TimelineView: React.FC<{ record?: RecordContext }> = ({ record }) => {
                 }}
                 onOpen={open}
                 onComplete={complete}
+                onSaveEdit={saveEdit}
+                onEditInForm={(item) => void editInForm(item)}
                 onCopyLink={copyLink}
             />
+            {confirmDialog}
             <Toaster toasterId={toasterId} position="bottom-end" />
         </div>
     );

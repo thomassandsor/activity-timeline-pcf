@@ -1,21 +1,20 @@
 import * as React from "react";
 import {
-    AvatarGroup, AvatarGroupItem, AvatarGroupPopover, Button, makeStyles, mergeClasses, partitionAvatarGroupItems,
-    shorthands, Skeleton, SkeletonItem, Spinner, tokens, Tooltip, useId,
+    Button, makeStyles, mergeClasses, shorthands, Skeleton, SkeletonItem, Spinner, tokens, Tooltip, useId,
 } from "@fluentui/react-components";
 import {
-    ArrowDownLeftRegular, ArrowUpRightRegular, AttachRegular, CallInboundRegular, CallOutboundRegular, CheckmarkRegular, ChevronDownRegular,
-    ChevronUpRegular, ClockRegular, DocumentRegular, ImageRegular, ImportantRegular, OpenRegular, TimerRegular,
+    ArrowDownLeftRegular, ArrowUpRightRegular, AttachRegular, CheckmarkRegular, ChevronDownRegular, ChevronUpRegular, ClockRegular,
+    DocumentRegular, ImageRegular, ImportantRegular, OpenRegular, TimerRegular,
 } from "@fluentui/react-icons";
 import { canComplete } from "../model/activityTypes";
 import { Density } from "../model/config";
 import { DateEnv, daysAgo, formatDayHeader, formatDuration, formatFull, formatShortDate, formatTime, formatUpcoming } from "../model/dates";
 import { DayGroup, isOpenState } from "../model/feed";
 import { stripReplyPrefixes } from "../model/html";
-import { FeedEntry, PartyRef, TimelineItem } from "../model/types";
-import { useTimelineEnv, useTypeVisual } from "./TimelineContext";
+import { FeedEntry, TimelineItem } from "../model/types";
+import { CardStatus, NODE, People, SectionHeader, TypeNode } from "./CardParts";
+import { useTimelineEnv } from "./TimelineContext";
 
-const NODE = 32;
 /** Upcoming items shown before "Show more" */
 const UPCOMING_COLLAPSED = 3;
 
@@ -29,25 +28,8 @@ const useStyles = makeStyles({
         position: "sticky",
         top: "var(--rsn-tl-top, 0px)",
         zIndex: 2,
-        display: "flex",
-        alignItems: "center",
-        columnGap: tokens.spacingHorizontalS,
         ...shorthands.padding(tokens.spacingVerticalS, "0", tokens.spacingVerticalXS),
         backgroundColor: tokens.colorNeutralBackground1,
-        color: tokens.colorNeutralForeground2,
-        fontSize: tokens.fontSizeBase200,
-        fontWeight: tokens.fontWeightSemibold,
-        lineHeight: tokens.lineHeightBase200,
-    },
-    dayRule: {
-        flexGrow: 1,
-        height: "1px",
-        backgroundColor: tokens.colorNeutralStroke2,
-    },
-    dayCount: {
-        color: tokens.colorNeutralForeground3,
-        fontWeight: tokens.fontWeightRegular,
-        fontVariantNumeric: "tabular-nums",
     },
     // Lines up with the cards, past the type icons
     upcomingActions: {
@@ -70,62 +52,7 @@ const useStyles = makeStyles({
         columnGap: tokens.spacingHorizontalM,
         alignItems: "start",
     },
-    node: {
-        position: "relative",
-        zIndex: 1,
-        width: `${NODE}px`,
-        height: `${NODE}px`,
-        marginTop: "6px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: tokens.borderRadiusCircular,
-        boxShadow: `0 0 0 3px ${tokens.colorNeutralBackground1}`,
-        fontSize: "16px",
-        boxSizing: "border-box",
-    },
-    nodeCompact: {
-        width: "24px",
-        height: "24px",
-        marginLeft: "4px",
-        marginTop: "6px",
-        fontSize: "13px",
-    },
-    nodeOpen: {
-        backgroundColor: tokens.colorNeutralBackground1,
-        ...shorthands.borderWidth("1.5px"),
-        ...shorthands.borderStyle("solid"),
-    },
-    nodeOverdue: {
-        backgroundColor: tokens.colorNeutralBackground1,
-        ...shorthands.border("2px", "solid", tokens.colorPaletteRedBorderActive),
-    },
-    nodeCanceled: {
-        backgroundColor: tokens.colorNeutralBackground3,
-        color: tokens.colorNeutralForeground3,
-    },
-    nodeBadgeDanger: {
-        backgroundColor: tokens.colorPaletteRedBackground3,
-        color: tokens.colorNeutralForegroundOnBrand,
-    },
-    nodeBadge: {
-        position: "absolute",
-        right: "-4px",
-        bottom: "-4px",
-        minWidth: "16px",
-        height: "16px",
-        ...shorthands.padding("0", "4px"),
-        boxSizing: "border-box",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: tokens.borderRadiusCircular,
-        backgroundColor: tokens.colorNeutralForeground1,
-        color: tokens.colorNeutralForegroundInverted,
-        fontSize: "10px",
-        fontWeight: tokens.fontWeightSemibold,
-        boxShadow: `0 0 0 2px ${tokens.colorNeutralBackground1}`,
-    },
+    node: { marginTop: "6px" },
     card: {
         position: "relative",
         minWidth: 0,
@@ -163,10 +90,6 @@ const useStyles = makeStyles({
         fontWeight: tokens.fontWeightSemibold,
         lineHeight: tokens.lineHeightBase300,
     },
-    titleCanceled: {
-        textDecorationLine: "line-through",
-        color: tokens.colorNeutralForeground3,
-    },
     newDot: {
         display: "inline-block",
         width: "7px",
@@ -182,6 +105,10 @@ const useStyles = makeStyles({
         textTransform: "lowercase",
     },
     stampTip: { display: "flex", flexDirection: "column", rowGap: "2px" },
+    timeOverdue: {
+        color: tokens.colorPaletteRedForeground1,
+        fontWeight: tokens.fontWeightSemibold,
+    },
     typeLabel: { fontWeight: tokens.fontWeightMedium, color: tokens.colorNeutralForeground2 },
     time: {
         flexShrink: 0,
@@ -201,7 +128,6 @@ const useStyles = makeStyles({
         lineHeight: tokens.lineHeightBase200,
         minWidth: 0,
     },
-    sep: { color: tokens.colorNeutralStroke1 },
     people: {
         display: "inline-flex",
         alignItems: "center",
@@ -215,25 +141,13 @@ const useStyles = makeStyles({
     dirIcon: { fontSize: "13px", flexShrink: 0 },
     dirIn: { color: tokens.colorPaletteBlueForeground2 },
     dirOut: { color: tokens.colorPaletteGreenForeground2 },
-    pill: {
-        display: "inline-flex",
-        alignItems: "center",
-        height: "18px",
-        ...shorthands.padding("0", "6px"),
-        borderRadius: tokens.borderRadiusMedium,
-        fontSize: tokens.fontSizeBase100,
-        fontWeight: tokens.fontWeightSemibold,
-        lineHeight: "18px",
-        whiteSpace: "nowrap",
+    // Everything under the title on the left; the status sits in the bottom right corner
+    lower: {
+        display: "flex",
+        alignItems: "flex-end",
+        columnGap: tokens.spacingHorizontalM,
     },
-    pillOpen: {
-        ...shorthands.border(tokens.strokeWidthThin, "solid", tokens.colorNeutralStroke1),
-        color: tokens.colorNeutralForeground2,
-    },
-    pillOverdue: {
-        backgroundColor: tokens.colorPaletteRedBackground2,
-        color: tokens.colorPaletteRedForeground2,
-    },
+    lowerMain: { flexGrow: 1, minWidth: 0 },
     snippet: {
         marginTop: "4px",
         color: tokens.colorNeutralForeground2,
@@ -386,11 +300,13 @@ export const Feed: React.FC<FeedProps> = (props) => {
                 const count = group.entries.reduce((n, e) => n + (e.type === "item" ? 1 : e.items.length), 0);
                 return (
                     <section key={group.key} aria-labelledby={headerId}>
-                        <div className={styles.dayHeader} id={headerId} role="heading" aria-level={3}>
-                            <span>{formatDayHeader(dates, group.date, { today: t("today"), yesterday: t("yesterday"), tomorrow: t("tomorrow") })}</span>
-                            <span className={styles.dayRule} aria-hidden />
-                            <span className={styles.dayCount}>{count}</span>
-                        </div>
+                        <SectionHeader
+                            className={styles.dayHeader}
+                            id={headerId}
+                            heading
+                            label={formatDayHeader(dates, group.date, { today: t("today"), yesterday: t("yesterday"), tomorrow: t("tomorrow") })}
+                            count={count}
+                        />
                         <div className={styles.dayBody}>
                             {group.entries.map((entry) => {
                                 position++;
@@ -431,11 +347,7 @@ const UpcomingSection: React.FC<FeedProps & { upcoming: UpcomingFeed }> = (props
 
     return (
         <section aria-labelledby={headerId}>
-            <div className={styles.dayHeader} id={headerId} role="heading" aria-level={3}>
-                <span>{t("upcoming")}</span>
-                <span className={styles.dayRule} aria-hidden />
-                <span className={styles.dayCount}>{hasMore ? `${entries.length}+` : entries.length}</span>
-            </div>
+            <SectionHeader className={styles.dayHeader} id={headerId} heading label={t("upcoming")} count={hasMore ? `${entries.length}+` : entries.length} />
             <div className={styles.dayBody}>
                 {shown.map((entry, i) =>
                     entry.type === "item" ? (
@@ -475,98 +387,6 @@ function isNew(item: TimelineItem, lastSeen: number | undefined, me: string): bo
     const author = item.createdBy?.id?.toLowerCase();
     return item.createdOn.getTime() > lastSeen && author !== me;
 }
-
-const TypeNode: React.FC<{ item: TimelineItem; compact: boolean; badge?: number }> = ({ item, compact, badge }) => {
-    const styles = useStyles();
-    const v = useTypeVisual(item.entity);
-    const open = item.kind === "activity" && isOpenState(item.state);
-    // Calls show which way they went
-    let Icon = v.Icon;
-    if (item.entity === "phonecall" && item.direction) Icon = item.direction === "in" ? CallInboundRegular : CallOutboundRegular;
-    const className = mergeClasses(
-        styles.node,
-        compact && styles.nodeCompact,
-        open && !item.isOverdue && styles.nodeOpen,
-        item.isOverdue && styles.nodeOverdue,
-        item.state === "canceled" && styles.nodeCanceled,
-    );
-    const style: React.CSSProperties =
-        item.state === "canceled"
-            ? {}
-            : item.isOverdue
-                ? { color: v.fg }
-                : open
-                    ? { borderColor: v.strong, color: v.fg }
-                    : { backgroundColor: v.bg, color: v.fg };
-    return (
-        <span className={className} style={style} aria-hidden>
-            <Icon />
-            {badge !== undefined && <span className={styles.nodeBadge}>{badge}</span>}
-            {badge === undefined && item.isOverdue && <span className={mergeClasses(styles.nodeBadge, styles.nodeBadgeDanger)}>!</span>}
-        </span>
-    );
-};
-
-function names(parties: PartyRef[], max = 2): string {
-    const list = parties.slice(0, max).map((p) => p.name).join(", ");
-    return parties.length > max ? `${list} +${parties.length - max}` : list;
-}
-
-const People: React.FC<{ item: TimelineItem }> = ({ item }) => {
-    const { t } = useTimelineEnv();
-    const styles = useStyles();
-    if (item.kind === "note") {
-        return item.createdBy?.name ? <span className={styles.people}>{item.createdBy.name}</span> : null;
-    }
-    if (item.attendees.length > 0) {
-        const { inlineItems, overflowItems } = partitionAvatarGroupItems({ items: item.attendees, maxInlineItems: 3 });
-        return (
-            <span className={styles.people}>
-                <AvatarGroup size={16} layout="stack">
-                    {inlineItems.map((p, i) => (
-                        <AvatarGroupItem key={`${p.name}-${i}`} name={p.name} />
-                    ))}
-                    {overflowItems && (
-                        <AvatarGroupPopover>
-                            {overflowItems.map((p, i) => (
-                                <AvatarGroupItem key={`${p.name}-${i}`} name={p.name} />
-                            ))}
-                        </AvatarGroupPopover>
-                    )}
-                </AvatarGroup>
-                {names(item.attendees)}
-            </span>
-        );
-    }
-    if (item.from.length > 0 || item.to.length > 0) {
-        const DirIcon = item.direction === "out" ? ArrowUpRightRegular : ArrowDownLeftRegular;
-        return (
-            <span className={styles.people}>
-                {item.direction && (
-                    <Tooltip content={item.direction === "out" ? t("outgoing") : t("incoming")} relationship="label">
-                        <DirIcon className={mergeClasses(styles.dirIcon, item.direction === "out" ? styles.dirOut : styles.dirIn)} />
-                    </Tooltip>
-                )}
-                {names(item.from, 1)}
-                {item.to.length > 0 && <span aria-hidden>→</span>}
-                {item.to.length > 0 && names(item.to.concat(item.cc), 1)}
-            </span>
-        );
-    }
-    return item.owner?.name ? <span className={styles.people}>{item.owner.name}</span> : null;
-};
-
-const StatusPill: React.FC<{ item: TimelineItem }> = ({ item }) => {
-    const { t } = useTimelineEnv();
-    const styles = useStyles();
-    if (item.kind === "note") return null;
-    if (item.isOverdue) return <span className={mergeClasses(styles.pill, styles.pillOverdue)}>{t("statusOverdue")}</span>;
-    // Only unfinished work gets a status; done is the normal state and needs no label
-    if (isOpenState(item.state)) {
-        return <span className={mergeClasses(styles.pill, styles.pillOpen)}>{item.statusLabel ?? t("statusOpen")}</span>;
-    }
-    return item.state === "canceled" && item.statusLabel ? <span>{item.statusLabel}</span> : null;
-};
 
 const Facts: React.FC<{ item: TimelineItem }> = ({ item }) => {
     const { t, dates } = useTimelineEnv();
@@ -657,7 +477,7 @@ const DateStamp: React.FC<{ item: TimelineItem; eventDates: boolean; withDay?: b
     const verbs: Record<string, string> = {
         modifiedon: t("verbUpdated"),
         actualend: t("verbCompleted"),
-        scheduledend: t("verbDue"),
+        scheduledend: item.isOverdue ? t("verbOverdue") : t("verbDue"),
         scheduledstart: t("verbStarts"),
         senton: t("verbSent"),
     };
@@ -671,8 +491,8 @@ const DateStamp: React.FC<{ item: TimelineItem; eventDates: boolean; withDay?: b
             content={<div className={styles.stampTip}>{lines.map((l) => <span key={l}>{l}</span>)}</div>}
             relationship="description"
         >
-            <time className={styles.time} dateTime={item.date.toISOString()}>
-                {verb && <span className={styles.timeVerb}>{verb} </span>}
+            <time className={mergeClasses(styles.time, item.isOverdue && styles.timeOverdue)} dateTime={item.date.toISOString()}>
+                {verb && <span className={item.isOverdue ? undefined : styles.timeVerb}>{verb} </span>}
                 {withDay ? dayAndTime(dates, item.date, { today: t("today"), tomorrow: t("tomorrow") }, !!verb) : formatTime(dates, item.date)}
             </time>
         </Tooltip>
@@ -701,7 +521,7 @@ const ItemCard: React.FC<CardProps & { item: TimelineItem }> = ({ item, position
 
     return (
         <div className={styles.row}>
-            <TypeNode item={item} compact={compact} />
+            <TypeNode item={item} compact={compact} className={styles.node} />
             <article
                 data-card
                 tabIndex={0}
@@ -720,19 +540,23 @@ const ItemCard: React.FC<CardProps & { item: TimelineItem }> = ({ item, position
                 }}
             >
                 <div className={styles.head}>
-                    <span id={titleId} className={mergeClasses(styles.title, item.state === "canceled" && styles.titleCanceled)}>
+                    <span id={titleId} className={styles.title}>
                         {isNew(item, lastSeen, currentUserId) && <span className={styles.newDot} role="img" aria-label={t("newBadge")} />}
                         {item.title}
                     </span>
                     <DateStamp item={item} eventDates={eventDates} withDay={withDay} />
                 </div>
-                <div className={styles.meta}>
-                    <span className={styles.typeLabel}>{item.typeLabel}</span>
-                    <StatusPill item={item} />
-                    <People item={item} />
+                <div className={styles.lower}>
+                    <div className={styles.lowerMain}>
+                        <div className={styles.meta}>
+                            <span className={styles.typeLabel}>{item.typeLabel}</span>
+                            <People item={item} />
+                        </div>
+                        {!compact && item.snippet && <div className={styles.snippet}>{item.snippet}</div>}
+                        {!compact && <Facts item={item} />}
+                    </div>
+                    <CardStatus item={item} />
                 </div>
-                {!compact && item.snippet && <div className={styles.snippet}>{item.snippet}</div>}
-                {!compact && <Facts item={item} />}
                 <div className={mergeClasses(styles.actions, hover && styles.actionsVisible)}>
                     {showComplete && (
                         <Tooltip content={t("markComplete")} relationship="label">
@@ -781,7 +605,7 @@ const ThreadCard: React.FC<CardProps & { entryKey: string; items: TimelineItem[]
 
     return (
         <div className={styles.row}>
-            <TypeNode item={latest} compact={compact} badge={items.length} />
+            <TypeNode item={latest} compact={compact} badge={items.length} className={styles.node} />
             <article
                 data-card
                 tabIndex={0}
@@ -809,24 +633,29 @@ const ThreadCard: React.FC<CardProps & { entryKey: string; items: TimelineItem[]
                     </span>
                     <DateStamp item={latest} eventDates={eventDates} withDay={withDay} />
                 </div>
-                <div className={styles.meta}>
-                    <span className={styles.typeLabel}>{latest.typeLabel}</span>
-                    <span>{t("messages", items.length)}</span>
-                    <span className={styles.people}>{participants.slice(0, 3).join(", ")}</span>
-                    {totalAttachments > 0 && (
-                        <span className={styles.people}>
-                            <AttachRegular className={styles.dirIcon} />
-                            {totalAttachments}
-                        </span>
-                    )}
-                </div>
-                {!compact && (!!latest.snippet || latest.from.length > 0) && (
-                    <div className={styles.snippet}>
-                        {latest.direction && <DirIcon className={mergeClasses(styles.dirIcon, latest.direction === "out" ? styles.dirOut : styles.dirIn)} />}{" "}
-                        {latest.from[0] && <span className={styles.latestFrom}>{latest.from[0].name}: </span>}
-                        {latest.snippet ?? ""}
+                <div className={styles.lower}>
+                    <div className={styles.lowerMain}>
+                    <div className={styles.meta}>
+                        <span className={styles.typeLabel}>{latest.typeLabel}</span>
+                        <span>{t("messages", items.length)}</span>
+                        <span className={styles.people}>{participants.slice(0, 3).join(", ")}</span>
+                        {totalAttachments > 0 && (
+                            <span className={styles.people}>
+                                <AttachRegular className={styles.dirIcon} />
+                                {totalAttachments}
+                            </span>
+                        )}
                     </div>
-                )}
+                    {!compact && (!!latest.snippet || latest.from.length > 0) && (
+                        <div className={styles.snippet}>
+                            {latest.direction && <DirIcon className={mergeClasses(styles.dirIcon, latest.direction === "out" ? styles.dirOut : styles.dirIn)} />}{" "}
+                            {latest.from[0] && <span className={styles.latestFrom}>{latest.from[0].name}: </span>}
+                            {latest.snippet ?? ""}
+                        </div>
+                    )}
+                    </div>
+                    <CardStatus item={latest} />
+                </div>
             </article>
         </div>
     );

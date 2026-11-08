@@ -1,11 +1,12 @@
-import { canComplete, dateRule, eventDate } from "../model/activityTypes";
+import { canComplete, canEdit, dateRule, eventDate, quickEdit, withStatusDetails } from "../model/activityTypes";
 import { FeedSort, SortOrder, TimelineConfig } from "../model/config";
+import { applyChanges } from "../model/edit";
 import { compareByDate, isOpenState } from "../model/feed";
 import { looksLikeHtml, makeSnippet, noteHeading, threadKeyFor } from "../model/html";
 import {
-    ActivityTypeInfo, AttachmentRef, Counts, ItemDetails, PartyRef, RhythmRow, TimelineFilters, TimelineItem,
+    ActivityTypeInfo, AttachmentRef, Counts, EditValues, ItemChanges, ItemDetails, PartyRef, StatusOption, StateLabels, TimelineFilters, TimelineItem,
 } from "../model/types";
-import { FeedPagers, FileContent, MergedPager, NewNote, Stream, TimelineDataSource } from "./dataSource";
+import { FeedPagers, FileContent, MergedPager, NewNote, SearchPager, Stream, TimelineDataSource } from "./dataSource";
 
 /**
  * In-memory data for the PCF test harness, which has no Dataverse connection.
@@ -57,7 +58,7 @@ interface Seed {
 function seeds(): Seed[] {
     return [
         {
-            entity: "appointment", title: "Site visit at Harbor Motors: TX-400 lock cylinder", ago: 20 * HOUR, start: -2 * DAY - 3 * HOUR, due: -2 * DAY - 2 * HOUR,
+            entity: "appointment", title: "Site visit at Harbor Motors: TX-400 lock cylinder", ago: 20 * HOUR, start: -2 * DAY - 3 * HOUR, due: -2 * DAY - 4 * HOUR,
             state: "scheduled", status: "Scheduled", attendees: [EMMA, ME], body: "Go through the roof box on site. Bring a new lock cylinder and a torque wrench.",
         },
         {
@@ -76,6 +77,7 @@ function seeds(): Seed[] {
             entity: "phonecall", title: "Emma called about the warranty case", ago: 26 * HOUR, state: "completed", status: "Received", direction: "in", from: [EMMA], to: [ME], duration: 12,
             body: "Confirmed that the warranty covers the lock cylinder. Promised an update on delivery time by Friday.",
         },
+        { entity: "task", title: "Order a spare part from the old supplier", ago: 27 * HOUR, state: "canceled", status: "Canceled" },
         {
             entity: "annotation", title: "Photos from the workshop", ago: 28 * HOUR, from: [SAM], file: { name: "lock-cylinder-closeup.jpg", mime: "image/jpeg", size: 482113 },
             body: "The cylinder is clearly worn on the inside. It looks like moisture got in through the seal.",
@@ -115,6 +117,14 @@ function seeds(): Seed[] {
     ];
 }
 
+function sampleStatuses(entity: string): StatusOption[] {
+    const open = entity === "task"
+        ? [{ value: 2, label: "Not Started", state: 0 }, { value: 3, label: "In Progress", state: 0 }, { value: 4, label: "Waiting on someone else", state: 0 }, { value: 7, label: "Deferred", state: 0 }]
+        : [{ value: 1, label: "Open", state: 0 }];
+    const done = { value: entity === "task" ? 5 : 2, label: "Completed", state: 1 };
+    return withStatusDetails([...open, done, { value: 90, label: "Canceled", state: 2 }], {});
+}
+
 function build(seed: Seed, index: number, now: number): TimelineItem {
     const id = `sample-${index}`;
     const isHtml = looksLikeHtml(seed.body);
@@ -129,6 +139,7 @@ function build(seed: Seed, index: number, now: number): TimelineItem {
         kind: isNote ? "note" : "activity",
         typeLabel: LABELS[seed.entity] ?? seed.entity,
         title: seed.title,
+        noteSubject: isNote ? seed.title : undefined,
         snippet: makeSnippet(seed.body, isHtml),
         body: seed.body,
         bodyIsHtml: isHtml,
@@ -142,7 +153,8 @@ function build(seed: Seed, index: number, now: number): TimelineItem {
         actualEnd: state === "completed" ? date : undefined,
         durationMinutes: seed.duration,
         state,
-        statusLabel: seed.status,
+        statusCode: sampleStatuses(seed.entity).find((s) => s.label === seed.status)?.value,
+        statusDetail: sampleStatuses(seed.entity).find((s) => s.label === seed.status)?.detail,
         isOverdue: !isNote && seed.entity !== "email" && (state === "open" || state === "scheduled") && !!scheduledEnd && scheduledEnd.getTime() < now,
         priority: seed.priority,
         priorityLabel: seed.priority === "high" ? "High" : seed.priority === "low" ? "Low" : seed.priority ? "Normal" : undefined,
@@ -211,15 +223,6 @@ export class SampleDataSource implements TimelineDataSource {
         });
     }
 
-    public getRhythm(sort: FeedSort, from: Date, to: Date): Promise<RhythmRow[]> {
-        return this.delay(
-            this.items
-                .map((i) => withSortDate(i, i.kind === "note" ? (sort.activities === "eventdate" ? "createdon" : sort.notes) : sort.activities, this.config))
-                .filter((i) => i.date >= from && i.date < to)
-                .map((i) => ({ entity: i.entity, date: i.date })),
-        );
-    }
-
     public openFeed(filters: TimelineFilters, sort: FeedSort): FeedPagers {
         const now = Date.now();
         const q = filters.search.trim().toLowerCase();
@@ -235,12 +238,19 @@ export class SampleDataSource implements TimelineDataSource {
             .filter((i) => {
                 const f = filters.date;
                 if (f.kind === "last") return i.date.getTime() >= now - f.days * DAY;
-                if (f.kind === "range") return i.date >= f.from && i.date < f.to;
                 return true;
             })
             .filter((i) => !filters.onlyMine || i.owner?.id === ME.id)
-            .filter((i) => !q || `${i.title} ${i.body ?? ""} ${i.file?.fileName ?? ""}`.toLowerCase().includes(q))
             .map((i) => withSortDate(i, i.kind === "note" ? (sort.activities === "eventdate" ? "createdon" : sort.notes) : sort.activities, this.config));
+
+        // Like the Dataverse source: only the newest items are looked through, and hits come back once
+        if (q) {
+            const limit = this.config.searchLimit;
+            const newest = [...matching].sort((a, b) => b.createdOn.getTime() - a.createdOn.getTime());
+            const searched = newest.slice(0, limit);
+            const items = searched.filter((i) => `${i.title} ${i.body ?? ""} ${i.file?.fileName ?? ""}`.toLowerCase().includes(q)).sort(compareByDate(sort.order));
+            return { history: new SearchPager(() => this.delay({ items, limit: newest.length > limit ? { count: limit, from: searched[limit - 1].createdOn } : undefined }, 300)) };
+        }
 
         // Like the Dataverse source: by activity date, newest first, open items still ahead get their own section
         const withUpcoming = sort.activities === "eventdate" && sort.order === "desc";
@@ -288,7 +298,22 @@ export class SampleDataSource implements TimelineDataSource {
                 mimeType: "application/pdf",
                 size: 180000 + n * 90000,
             }));
-        return this.delay({ fields, attachments }, 350);
+        const editing = canEdit(item) && quickEdit(item.entity) !== undefined;
+        const text = item.body ?? "";
+        const edit: EditValues | undefined = editing
+            ? {
+                title: item.kind === "note" ? item.noteSubject ?? "" : item.title,
+                text,
+                textIsRich: looksLikeHtml(text),
+                start: item.scheduledStart,
+                end: item.scheduledEnd,
+                allDay: false,
+                priority: item.kind === "note" ? undefined : item.priority === "high" ? 2 : item.priority === "low" ? 0 : 1,
+                priorities: item.kind === "note" ? [] : [{ value: 0, label: "Low" }, { value: 1, label: "Normal" }, { value: 2, label: "High" }],
+            }
+            : undefined;
+        const statuses = item.kind === "activity" && canEdit(item) ? sampleStatuses(item.entity) : undefined;
+        return this.delay({ fields, attachments, edit, statuses }, 350);
     }
 
     public getFileContent(file: AttachmentRef): Promise<FileContent> {
@@ -297,6 +322,10 @@ export class SampleDataSource implements TimelineDataSource {
 
     public getTypeLabels(entities: string[]): Promise<ActivityTypeInfo[]> {
         return Promise.resolve(entities.map((entity) => ({ entity, label: LABELS[entity] ?? entity })));
+    }
+
+    public getStateLabels(): Promise<StateLabels> {
+        return Promise.resolve({});
     }
 
     public createNote(note: NewNote): Promise<void> {
@@ -318,7 +347,7 @@ export class SampleDataSource implements TimelineDataSource {
             const target = this.items.find((i) => i.key === item.key);
             if (target) {
                 target.state = "completed";
-                target.statusLabel = "Completed";
+                target.statusDetail = undefined;
                 target.isOverdue = false;
                 target.actualEnd = new Date();
             }
@@ -326,9 +355,22 @@ export class SampleDataSource implements TimelineDataSource {
         return this.delay(undefined, 300);
     }
 
+    public updateItem(item: TimelineItem, before: EditValues, changes: ItemChanges): Promise<void> {
+        console.info("[sample] update", item.key, changes);
+        applyChanges(item, before, changes, LABELS.annotation, new Date());
+        const stored = this.items.find((i) => i.key === item.key);
+        if (stored && stored !== item) applyChanges(stored, before, changes, LABELS.annotation, new Date());
+        return this.delay(undefined, 400);
+    }
+
     public openRecord(entity: string, id: string): Promise<void> {
         console.info(`[sample] open ${entity} ${id}`);
         return Promise.resolve();
+    }
+
+    public openRecordPanel(entity: string, id: string): Promise<void> {
+        console.info(`[sample] panel ${entity} ${id}`);
+        return this.delay(undefined, 1500);
     }
 
     public createActivity(entity: string): Promise<boolean> {

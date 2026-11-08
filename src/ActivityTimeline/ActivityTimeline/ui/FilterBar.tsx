@@ -1,11 +1,10 @@
 import * as React from "react";
 import {
     Button, makeStyles, Menu, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, mergeClasses, SearchBox, shorthands,
-    ToggleButton, tokens,
+    Spinner, ToggleButton, tokens,
 } from "@fluentui/react-components";
 import { CalendarLtrRegular, ChevronDownRegular, DismissRegular, FilterRegular, PersonRegular, SearchRegular } from "@fluentui/react-icons";
-import { DateFilter, RhythmRow, StatusFilter, TimelineFilters } from "../model/types";
-import { RhythmChart } from "./Overview";
+import { DateFilter, StatusFilter, TimelineFilters } from "../model/types";
 import { TypeDot, useTimelineEnv } from "./TimelineContext";
 
 const useStyles = makeStyles({
@@ -21,7 +20,8 @@ const useStyles = makeStyles({
         animationTimingFunction: tokens.curveDecelerateMid,
         "@media (prefers-reduced-motion: reduce)": { animationDuration: "0s" },
     },
-    search: { width: "100%", maxWidth: "none" },
+    searchRow: { display: "flex", alignItems: "center", columnGap: tokens.spacingHorizontalS },
+    search: { flexGrow: 1, minWidth: 0, maxWidth: "none" },
     chips: {
         display: "flex",
         columnGap: tokens.spacingHorizontalXS,
@@ -105,6 +105,9 @@ export interface TypeCount {
     count?: number;
 }
 
+/** A single letter would match nearly everything, at the full cost of a search */
+const MIN_SEARCH_LENGTH = 2;
+
 export function activeFilterCount(filters: TimelineFilters): number {
     return (filters.types.length > 0 ? 1 : 0) + (filters.status !== "all" ? 1 : 0) + (filters.date.kind !== "any" ? 1 : 0) +
         (filters.onlyMine ? 1 : 0) + (filters.search ? 1 : 0);
@@ -125,7 +128,7 @@ function useLabels() {
         { key: "90", label: t("dateLast90"), value: { kind: "last", days: 90 } },
     ];
     const dateLabel = (date: DateFilter) =>
-        date.kind === "range" ? date.label : dateOptions.find((o) => o.key === (date.kind === "last" ? String(date.days) : "any"))?.label ?? t("dateAny");
+        dateOptions.find((o) => o.key === (date.kind === "last" ? String(date.days) : "any"))?.label ?? t("dateAny");
     return { status, dateOptions, dateLabel };
 }
 
@@ -133,16 +136,16 @@ interface FilterPanelProps {
     filters: TimelineFilters;
     types: TypeCount[];
     total?: number;
-    /** Items for the activity-per-week chart; loaded when the panel opens */
-    rhythm?: { rows: RhythmRow[]; weeksBack: number };
+    /** A search is running */
+    searching: boolean;
     onChange: (update: Partial<TimelineFilters>) => void;
     onClear: () => void;
     onClose: () => void;
     searchRef?: React.Ref<HTMLInputElement>;
 }
 
-/** Search, type, status, date and owner filters, plus activity per week. Shown only while the user is filtering. */
-export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, types, total, rhythm, onChange, onClear, onClose, searchRef }) => {
+/** Search, type, status, date and owner filters. Shown only while the user is filtering. */
+export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, types, total, searching, onChange, onClear, onClose, searchRef }) => {
     const { t } = useTimelineEnv();
     const styles = useStyles();
     const labels = useLabels();
@@ -151,18 +154,18 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, types, total,
     // Keep the box in sync when filters are cleared elsewhere
     React.useEffect(() => setSearch(filters.search), [filters.search]);
 
-    // Debounce typing so each keystroke doesn't start a Dataverse query
-    React.useEffect(() => {
-        if (search === filters.search) return;
-        const handle = window.setTimeout(() => onChange({ search }), 350);
-        return () => window.clearTimeout(handle);
-    }, [search, filters.search, onChange]);
+    // Searching is expensive, so it only runs when asked for: the button or Enter, never while typing
+    const term = search.trim();
+    const canSearch = term.length >= MIN_SEARCH_LENGTH && term !== filters.search;
+    const runSearch = () => {
+        if (canSearch) onChange({ search: term });
+    };
 
     const toggleType = (entity: string) => {
         const has = filters.types.includes(entity);
         onChange({ types: has ? filters.types.filter((x) => x !== entity) : [...filters.types, entity] });
     };
-    const dateKey = filters.date.kind === "last" ? String(filters.date.days) : filters.date.kind === "range" ? "range" : "any";
+    const dateKey = filters.date.kind === "last" ? String(filters.date.days) : "any";
 
     return (
         <div
@@ -175,18 +178,27 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, types, total,
                 }
             }}
         >
-            <SearchBox
-                className={styles.search}
-                appearance="filled-darker"
-                placeholder={t("searchPlaceholder")}
-                aria-label={t("searchPlaceholder")}
-                value={search}
-                input={{ ref: searchRef }}
-                onChange={(_, d) => setSearch(d.value)}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") onChange({ search });
-                }}
-            />
+            <div className={styles.searchRow}>
+                <SearchBox
+                    className={styles.search}
+                    appearance="filled-darker"
+                    placeholder={t("searchPlaceholder")}
+                    aria-label={t("searchPlaceholder")}
+                    value={search}
+                    input={{ ref: searchRef }}
+                    onChange={(_, d) => {
+                        setSearch(d.value);
+                        // Emptying the box ends the search; that only reloads the normal feed
+                        if (!d.value && filters.search) onChange({ search: "" });
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") runSearch();
+                    }}
+                />
+                <Button appearance="primary" disabled={!canSearch} icon={searching ? <Spinner size="extra-tiny" /> : undefined} onClick={runSearch}>
+                    {t("search")}
+                </Button>
+            </div>
             <div className={styles.chips} role="toolbar" aria-label={t("filterByType")}>
                 <button
                     type="button"
@@ -272,7 +284,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, types, total,
                     </Button>
                 )}
             </div>
-            {rhythm && <RhythmChart rows={rhythm.rows} weeksBack={rhythm.weeksBack} filters={filters} onFilter={onChange} />}
         </div>
     );
 };

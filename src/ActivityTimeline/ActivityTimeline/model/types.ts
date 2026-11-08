@@ -3,6 +3,9 @@ export type ItemKind = "activity" | "note";
 /** Normalised lifecycle state. Dataverse statecodes differ per activity type, so everything is mapped to these. */
 export type ItemState = "open" | "scheduled" | "completed" | "canceled";
 
+/** The words for a state in the user's language, from Dataverse */
+export type StateLabels = Partial<Record<ItemState, string>>;
+
 export type Direction = "in" | "out";
 
 export interface PartyRef {
@@ -32,6 +35,8 @@ export interface TimelineItem {
     /** Localised table name from Dataverse, e.g. "E-post" */
     typeLabel: string;
     title: string;
+    /** A note's own title as written; what shows as title may come from its file or text */
+    noteSubject?: string;
     /** Plain-text excerpt with quoted replies removed */
     snippet?: string;
     /** Raw description / note text. HTML for emails and rich text notes. */
@@ -52,7 +57,8 @@ export interface TimelineItem {
     state: ItemState;
     /** Status reason value; its label depends on the activity's own table */
     statusCode?: number;
-    statusLabel?: string;
+    /** Beside the status word while the item is open, where its table has several reasons to tell apart */
+    statusDetail?: string;
     isOverdue: boolean;
     priority?: "low" | "normal" | "high";
     priorityLabel?: string;
@@ -81,8 +87,7 @@ export type FeedEntry =
 export type StatusFilter = "all" | "open" | "overdue" | "completed";
 export type DateFilter =
     | { kind: "any" }
-    | { kind: "last"; days: number }
-    | { kind: "range"; from: Date; to: Date; label: string };
+    | { kind: "last"; days: number };
 
 export interface TimelineFilters {
     /** Empty = all configured types */
@@ -109,12 +114,6 @@ export interface Counts {
     overdue: number;
 }
 
-/** One item in the activity-per-week chart: its type and the date it sits at in the feed */
-export interface RhythmRow {
-    entity: string;
-    date: Date;
-}
-
 export interface PreviewField {
     name: string;
     label: string;
@@ -127,11 +126,54 @@ export interface ItemDetails {
     /** Full body, when the list query didn't return it */
     body?: string;
     bodyIsHtml?: boolean;
+    /** Current values, for what can be changed in the preview */
+    edit?: EditValues;
+    /** The table's status reasons, while the item is open */
+    statuses?: StatusOption[];
+}
+
+/** A status reason of the item's table, and the state it belongs to */
+export interface StatusOption {
+    value: number;
+    label: string;
+    state: number;
+    /** What shows beside the status word while this is the status */
+    detail?: string;
+}
+
+/** What can be changed on the item right now. Title and text are plain text. */
+export interface EditValues {
+    title: string;
+    text: string;
+    /** The text has formatting that a plain text box would destroy */
+    textIsRich: boolean;
+    start?: Date;
+    end?: Date;
+    allDay: boolean;
+    priority?: number;
+    priorities: { value: number; label: string }[];
+}
+
+/** Only what the user changed, so a save can't overwrite anyone else's change to the other columns. Null clears a date. */
+export interface ItemChanges {
+    title?: string;
+    text?: string;
+    start?: Date | null;
+    end?: Date | null;
+    priority?: number;
+    status?: StatusOption;
+}
+
+/** How far a search reached when the record has more activities than it looks through */
+export interface SearchLimit {
+    count: number;
+    from: Date;
 }
 
 export interface PageResult {
     items: TimelineItem[];
     hasMore: boolean;
+    searchLimit?: SearchLimit;
 }
 
 export interface RecordContext {

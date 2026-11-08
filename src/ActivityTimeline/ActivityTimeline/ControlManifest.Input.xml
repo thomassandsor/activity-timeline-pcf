@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="Sandsor" constructor="ActivityTimeline" version="0.1.10" display-name-key="Control_Name" description-key="Control_Description" control-type="virtual" >
+  <control namespace="Sandsor" constructor="ActivityTimeline" version="0.2.8" display-name-key="Control_Name" description-key="Control_Description" control-type="virtual" >
     <external-service-usage enabled="false">
     </external-service-usage>
 
@@ -71,6 +71,7 @@
       <resx path="strings/ActivityTimeline.1033.resx" version="1.0.0" />
       <resx path="strings/ActivityTimeline.1044.resx" version="1.0.0" />
       <resx path="strings/ActivityTimeline.1053.resx" version="1.0.0" />
+      <resx path="strings/ActivityTimeline.1030.resx" version="1.0.0" />
     </resources>
 
     <feature-usage>

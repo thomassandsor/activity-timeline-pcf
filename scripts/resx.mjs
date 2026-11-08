@@ -2,11 +2,12 @@
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
-/** The languages every component ships. Each table entry is [English, Norwegian Bokmål, Swedish]. */
+/** The languages every component ships. Each table entry is [English, Norwegian Bokmål, Swedish, Danish]. */
 export const LANGUAGES = [
     { lcid: "1033", name: "English" },
     { lcid: "1044", name: "Norwegian" },
     { lcid: "1053", name: "Swedish" },
+    { lcid: "1030", name: "Danish" },
 ];
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

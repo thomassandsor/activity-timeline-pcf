@@ -154,7 +154,7 @@
     <value>Show overview</value>
   </data>
   <data name="ShowOverview_Description" xml:space="preserve">
-    <value>Show the summary and the activity-per-week chart above the timeline.</value>
+    <value>Show the line of overdue and open items above the timeline.</value>
   </data>
   <data name="ThreadEmails_Name" xml:space="preserve">
     <value>Group email conversations</value>
@@ -184,7 +184,16 @@
     <value>Refresh</value>
   </data>
   <data name="searchPlaceholder" xml:space="preserve">
-    <value>Search timeline</value>
+    <value>Search titles and content</value>
+  </data>
+  <data name="searchLimited" xml:space="preserve">
+    <value>Only the newest {0} items were searched (back to {1}).</value>
+  </data>
+  <data name="searchFailed" xml:space="preserve">
+    <value>The search couldn't finish</value>
+  </data>
+  <data name="searchFailedHint" xml:space="preserve">
+    <value>It may have taken too long. Try again, or narrow it down with a filter.</value>
   </data>
   <data name="all" xml:space="preserve">
     <value>All</value>
@@ -321,9 +330,6 @@
   <data name="dueOn" xml:space="preserve">
     <value>Due {0}</value>
   </data>
-  <data name="overdueSince" xml:space="preserve">
-    <value>Overdue · due {0}</value>
-  </data>
   <data name="startsAt" xml:space="preserve">
     <value>Starts {0}</value>
   </data>
@@ -372,21 +378,6 @@
   <data name="newSinceLastVisit" xml:space="preserve">
     <value>{0} new since your last visit</value>
   </data>
-  <data name="rhythmLabel" xml:space="preserve">
-    <value>Activity per week</value>
-  </data>
-  <data name="rhythmWeek" xml:space="preserve">
-    <value>Week {0}</value>
-  </data>
-  <data name="rhythmNow" xml:space="preserve">
-    <value>Now</value>
-  </data>
-  <data name="rhythmHint" xml:space="preserve">
-    <value>Select a week to show only that week.</value>
-  </data>
-  <data name="noActivityThisWeek" xml:space="preserve">
-    <value>No activity</value>
-  </data>
   <data name="completeFailed" xml:space="preserve">
     <value>Couldn't complete the activity.</value>
   </data>
@@ -420,9 +411,6 @@
   <data name="keyboardHint" xml:space="preserve">
     <value>↑ ↓ to move · Enter to preview · O to open</value>
   </data>
-  <data name="previewKeyboardHint" xml:space="preserve">
-    <value>↑ ↓ previous / next · O open · Esc close</value>
-  </data>
   <data name="noteSaved" xml:space="preserve">
     <value>Note saved</value>
   </data>
@@ -437,9 +425,6 @@
   </data>
   <data name="filterActive" xml:space="preserve">
     <value>{0} filters</value>
-  </data>
-  <data name="weekFilter" xml:space="preserve">
-    <value>Week {0}</value>
   </data>
   <data name="noteCreatedBy" xml:space="preserve">
     <value>{0} wrote</value>
@@ -537,15 +522,6 @@
   <data name="completedAt" xml:space="preserve">
     <value>Completed {0}</value>
   </data>
-  <data name="canceledAt" xml:space="preserve">
-    <value>Canceled {0}</value>
-  </data>
-  <data name="sentAt" xml:space="preserve">
-    <value>Sent {0}</value>
-  </data>
-  <data name="receivedAt" xml:space="preserve">
-    <value>Received {0}</value>
-  </data>
   <data name="wasDue" xml:space="preserve">
     <value>Due date was {0}</value>
   </data>
@@ -563,5 +539,134 @@
   </data>
   <data name="byPerson" xml:space="preserve">
     <value>{0} by {1}</value>
+  </data>
+  <data name="editInForm" xml:space="preserve">
+    <value>Edit in form</value>
+  </data>
+  <data name="editStart" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="editEnd" xml:space="preserve">
+    <value>End</value>
+  </data>
+  <data name="editTime" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="editDate" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="editTitleRequired" xml:space="preserve">
+    <value>Enter a title.</value>
+  </data>
+  <data name="editNoteEmpty" xml:space="preserve">
+    <value>A note needs a title or text.</value>
+  </data>
+  <data name="editInvalidDate" xml:space="preserve">
+    <value>Enter a valid date and time.</value>
+  </data>
+  <data name="editEndBeforeStart" xml:space="preserve">
+    <value>The end must be after the start.</value>
+  </data>
+  <data name="editRichText" xml:space="preserve">
+    <value>This text has formatting, so it's changed in the form.</value>
+  </data>
+  <data name="editAllDay" xml:space="preserve">
+    <value>All day. Its dates are changed in the form.</value>
+  </data>
+  <data name="addTitle" xml:space="preserve">
+    <value>Add a title</value>
+  </data>
+  <data name="addDescription" xml:space="preserve">
+    <value>Add a description</value>
+  </data>
+  <data name="addText" xml:space="preserve">
+    <value>Write something</value>
+  </data>
+  <data name="changeTitle" xml:space="preserve">
+    <value>Change the title</value>
+  </data>
+  <data name="changeText" xml:space="preserve">
+    <value>Change the text</value>
+  </data>
+  <data name="changeStatus" xml:space="preserve">
+    <value>Change status</value>
+  </data>
+  <data name="changeDate" xml:space="preserve">
+    <value>Change date</value>
+  </data>
+  <data name="changePriority" xml:space="preserve">
+    <value>Change priority</value>
+  </data>
+  <data name="noDueDate" xml:space="preserve">
+    <value>No due date</value>
+  </data>
+  <data name="clearDate" xml:space="preserve">
+    <value>Remove date</value>
+  </data>
+  <data name="inAWeek" xml:space="preserve">
+    <value>In a week</value>
+  </data>
+  <data name="previousMonth" xml:space="preserve">
+    <value>Previous month</value>
+  </data>
+  <data name="nextMonth" xml:space="preserve">
+    <value>Next month</value>
+  </data>
+  <data name="saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="saving" xml:space="preserve">
+    <value>Saving</value>
+  </data>
+  <data name="saveFailed" xml:space="preserve">
+    <value>Couldn't save.</value>
+  </data>
+  <data name="statusCanceled" xml:space="preserve">
+    <value>Canceled</value>
+  </data>
+  <data name="statusScheduled" xml:space="preserve">
+    <value>Scheduled</value>
+  </data>
+  <data name="verbOverdue" xml:space="preserve">
+    <value>Overdue</value>
+  </data>
+  <data name="fieldStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="fieldPriority" xml:space="preserve">
+    <value>Priority</value>
+  </data>
+  <data name="fieldWhen" xml:space="preserve">
+    <value>When</value>
+  </data>
+  <data name="fieldSent" xml:space="preserve">
+    <value>Sent</value>
+  </data>
+  <data name="fieldReceived" xml:space="preserve">
+    <value>Received</value>
+  </data>
+  <data name="fieldDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="fieldText" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="confirmCompleteTitle" xml:space="preserve">
+    <value>Mark as completed?</value>
+  </data>
+  <data name="confirmCancelTitle" xml:space="preserve">
+    <value>Cancel this activity?</value>
+  </data>
+  <data name="confirmCloseBody" xml:space="preserve">
+    <value>“{0}” will be set to {1}. After that, it can't be changed here.</value>
+  </data>
+  <data name="confirmComplete" xml:space="preserve">
+    <value>Complete</value>
+  </data>
+  <data name="confirmCancel" xml:space="preserve">
+    <value>Cancel activity</value>
+  </data>
+  <data name="keepOpen" xml:space="preserve">
+    <value>Keep open</value>
   </data>
 </root>

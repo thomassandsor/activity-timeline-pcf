@@ -154,7 +154,7 @@
     <value>Visa översikt</value>
   </data>
   <data name="ShowOverview_Description" xml:space="preserve">
-    <value>Visa sammanfattningen och diagrammet över aktivitet per vecka ovanför tidslinjen.</value>
+    <value>Visa raden med försenade och öppna aktiviteter ovanför tidslinjen.</value>
   </data>
   <data name="ThreadEmails_Name" xml:space="preserve">
     <value>Gruppera e-postkonversationer</value>
@@ -184,7 +184,16 @@
     <value>Uppdatera</value>
   </data>
   <data name="searchPlaceholder" xml:space="preserve">
-    <value>Sök i tidslinjen</value>
+    <value>Sök i rubriker och innehåll</value>
+  </data>
+  <data name="searchLimited" xml:space="preserve">
+    <value>Bara de {0} senaste objekten söktes igenom (tillbaka till {1}).</value>
+  </data>
+  <data name="searchFailed" xml:space="preserve">
+    <value>Sökningen kunde inte slutföras</value>
+  </data>
+  <data name="searchFailedHint" xml:space="preserve">
+    <value>Det kan ha tagit för lång tid. Försök igen eller begränsa med ett filter.</value>
   </data>
   <data name="all" xml:space="preserve">
     <value>Alla</value>
@@ -321,9 +330,6 @@
   <data name="dueOn" xml:space="preserve">
     <value>Förfaller {0}</value>
   </data>
-  <data name="overdueSince" xml:space="preserve">
-    <value>Försenad · förföll {0}</value>
-  </data>
   <data name="startsAt" xml:space="preserve">
     <value>Börjar {0}</value>
   </data>
@@ -372,21 +378,6 @@
   <data name="newSinceLastVisit" xml:space="preserve">
     <value>{0} nya sedan ditt senaste besök</value>
   </data>
-  <data name="rhythmLabel" xml:space="preserve">
-    <value>Aktivitet per vecka</value>
-  </data>
-  <data name="rhythmWeek" xml:space="preserve">
-    <value>Vecka {0}</value>
-  </data>
-  <data name="rhythmNow" xml:space="preserve">
-    <value>Nu</value>
-  </data>
-  <data name="rhythmHint" xml:space="preserve">
-    <value>Välj en vecka för att bara visa den veckan.</value>
-  </data>
-  <data name="noActivityThisWeek" xml:space="preserve">
-    <value>Ingen aktivitet</value>
-  </data>
   <data name="completeFailed" xml:space="preserve">
     <value>Det gick inte att slutföra aktiviteten.</value>
   </data>
@@ -420,9 +411,6 @@
   <data name="keyboardHint" xml:space="preserve">
     <value>↑ ↓ för att flytta · Enter för att förhandsgranska · O för att öppna</value>
   </data>
-  <data name="previewKeyboardHint" xml:space="preserve">
-    <value>↑ ↓ föregående / nästa · O öppna · Esc stäng</value>
-  </data>
   <data name="noteSaved" xml:space="preserve">
     <value>Anteckningen har sparats</value>
   </data>
@@ -437,9 +425,6 @@
   </data>
   <data name="filterActive" xml:space="preserve">
     <value>{0} filter</value>
-  </data>
-  <data name="weekFilter" xml:space="preserve">
-    <value>Vecka {0}</value>
   </data>
   <data name="noteCreatedBy" xml:space="preserve">
     <value>{0} skrev</value>
@@ -537,15 +522,6 @@
   <data name="completedAt" xml:space="preserve">
     <value>Slutförd {0}</value>
   </data>
-  <data name="canceledAt" xml:space="preserve">
-    <value>Avbruten {0}</value>
-  </data>
-  <data name="sentAt" xml:space="preserve">
-    <value>Skickad {0}</value>
-  </data>
-  <data name="receivedAt" xml:space="preserve">
-    <value>Mottagen {0}</value>
-  </data>
   <data name="wasDue" xml:space="preserve">
     <value>Förfallodatumet var {0}</value>
   </data>
@@ -563,5 +539,134 @@
   </data>
   <data name="byPerson" xml:space="preserve">
     <value>{0} av {1}</value>
+  </data>
+  <data name="editInForm" xml:space="preserve">
+    <value>Redigera i formulär</value>
+  </data>
+  <data name="editStart" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="editEnd" xml:space="preserve">
+    <value>Slut</value>
+  </data>
+  <data name="editTime" xml:space="preserve">
+    <value>Tid</value>
+  </data>
+  <data name="editDate" xml:space="preserve">
+    <value>Datum</value>
+  </data>
+  <data name="editTitleRequired" xml:space="preserve">
+    <value>Ange en rubrik.</value>
+  </data>
+  <data name="editNoteEmpty" xml:space="preserve">
+    <value>En anteckning måste ha en rubrik eller text.</value>
+  </data>
+  <data name="editInvalidDate" xml:space="preserve">
+    <value>Ange ett giltigt datum och en giltig tid.</value>
+  </data>
+  <data name="editEndBeforeStart" xml:space="preserve">
+    <value>Slutet måste vara efter starten.</value>
+  </data>
+  <data name="editRichText" xml:space="preserve">
+    <value>Den här texten har formatering, så den ändras i formuläret.</value>
+  </data>
+  <data name="editAllDay" xml:space="preserve">
+    <value>Hela dagen. Datumen ändras i formuläret.</value>
+  </data>
+  <data name="addTitle" xml:space="preserve">
+    <value>Lägg till en rubrik</value>
+  </data>
+  <data name="addDescription" xml:space="preserve">
+    <value>Lägg till en beskrivning</value>
+  </data>
+  <data name="addText" xml:space="preserve">
+    <value>Skriv något</value>
+  </data>
+  <data name="changeTitle" xml:space="preserve">
+    <value>Ändra rubriken</value>
+  </data>
+  <data name="changeText" xml:space="preserve">
+    <value>Ändra texten</value>
+  </data>
+  <data name="changeStatus" xml:space="preserve">
+    <value>Ändra status</value>
+  </data>
+  <data name="changeDate" xml:space="preserve">
+    <value>Ändra datum</value>
+  </data>
+  <data name="changePriority" xml:space="preserve">
+    <value>Ändra prioritet</value>
+  </data>
+  <data name="noDueDate" xml:space="preserve">
+    <value>Inget förfallodatum</value>
+  </data>
+  <data name="clearDate" xml:space="preserve">
+    <value>Ta bort datum</value>
+  </data>
+  <data name="inAWeek" xml:space="preserve">
+    <value>Om en vecka</value>
+  </data>
+  <data name="previousMonth" xml:space="preserve">
+    <value>Föregående månad</value>
+  </data>
+  <data name="nextMonth" xml:space="preserve">
+    <value>Nästa månad</value>
+  </data>
+  <data name="saved" xml:space="preserve">
+    <value>Sparat</value>
+  </data>
+  <data name="saving" xml:space="preserve">
+    <value>Sparar</value>
+  </data>
+  <data name="saveFailed" xml:space="preserve">
+    <value>Det gick inte att spara.</value>
+  </data>
+  <data name="statusCanceled" xml:space="preserve">
+    <value>Avbruten</value>
+  </data>
+  <data name="statusScheduled" xml:space="preserve">
+    <value>Schemalagd</value>
+  </data>
+  <data name="verbOverdue" xml:space="preserve">
+    <value>Försenad</value>
+  </data>
+  <data name="fieldStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="fieldPriority" xml:space="preserve">
+    <value>Prioritet</value>
+  </data>
+  <data name="fieldWhen" xml:space="preserve">
+    <value>Tidpunkt</value>
+  </data>
+  <data name="fieldSent" xml:space="preserve">
+    <value>Skickat</value>
+  </data>
+  <data name="fieldReceived" xml:space="preserve">
+    <value>Mottaget</value>
+  </data>
+  <data name="fieldDescription" xml:space="preserve">
+    <value>Beskrivning</value>
+  </data>
+  <data name="fieldText" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="confirmCompleteTitle" xml:space="preserve">
+    <value>Markera som slutförd?</value>
+  </data>
+  <data name="confirmCancelTitle" xml:space="preserve">
+    <value>Avbryta aktiviteten?</value>
+  </data>
+  <data name="confirmCloseBody" xml:space="preserve">
+    <value>”{0}” får status {1}. Därefter kan den inte ändras här.</value>
+  </data>
+  <data name="confirmComplete" xml:space="preserve">
+    <value>Slutför</value>
+  </data>
+  <data name="confirmCancel" xml:space="preserve">
+    <value>Avbryt aktiviteten</value>
+  </data>
+  <data name="keepOpen" xml:space="preserve">
+    <value>Behåll öppen</value>
   </data>
 </root>

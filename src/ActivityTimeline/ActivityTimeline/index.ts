@@ -4,7 +4,7 @@ import { IInputs, IOutputs } from "./generated/ManifestTypes";
 import { TimelineDataSource } from "./data/dataSource";
 import { DataverseDataSource } from "./data/DataverseDataSource";
 import { parseConfig, RawConfig, TimelineConfig } from "./model/config";
-import { DateEnv, localeFromLanguageId } from "./model/dates";
+import { cultureFirstDay, DateEnv, formatCulture, localeFromLanguageId, timeOptions } from "./model/dates";
 import { defaultStrings, StringKey } from "./model/strings";
 import { RecordContext } from "./model/types";
 import { Timeline } from "./ui/Timeline";
@@ -46,8 +46,16 @@ export class ActivityTimeline implements ComponentFramework.ReactControl<IInputs
             if (!text || text === key) text = defaultStrings[key];
             return args.reduce<string>((s, a, i) => s.split(`{${i}}`).join(String(a)), text);
         };
+        // Already on the context, so this costs no queries. The culture name isn't in the public types, and the test harness has neither
+        const settings = context.userSettings as Partial<ComponentFramework.UserSettings> & { formatInfoCultureName?: string };
+        const language = localeFromLanguageId(settings.languageId);
+        const locale = formatCulture(settings.formatInfoCultureName, language);
         this.dates = {
-            locale: localeFromLanguageId(context.userSettings.languageId),
+            locale,
+            language,
+            time: timeOptions(settings.dateFormattingInfo?.shortTimePattern),
+            // Not dateFormattingInfo.firstDayOfWeek: users have no such setting, and it said Sunday for a Norwegian Formats
+            firstDay: cultureFirstDay(locale),
             offsetMinutes: (date) => {
                 try {
                     return context.userSettings.getTimeZoneOffsetMinutes(date);

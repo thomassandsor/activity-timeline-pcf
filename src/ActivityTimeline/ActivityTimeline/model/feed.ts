@@ -1,6 +1,6 @@
-import { DateEnv, dayKey, weekStartWall, DAY_MS, toWall } from "./dates";
+import { DateEnv, dayKey } from "./dates";
 import { SortOrder } from "./config";
-import { FeedEntry, ItemState, RhythmRow, TimelineItem } from "./types";
+import { FeedEntry, ItemState, TimelineItem } from "./types";
 
 export interface DayGroup {
     key: string;
@@ -75,57 +75,4 @@ export function flattenEntries(entries: FeedEntry[]): TimelineItem[] {
 
 export function isOpenState(state: ItemState): boolean {
     return state === "open" || state === "scheduled";
-}
-
-// --- Overview -------------------------------------------------------------------------------------------
-
-export interface RhythmWeek {
-    /** Wall-clock start of the week (Monday) */
-    wallStart: number;
-    total: number;
-    byType: { entity: string; count: number }[];
-    isFuture: boolean;
-    isCurrent: boolean;
-}
-
-/** The real instants covered by the rhythm strip: `weeksBack` weeks up to this one, plus `weeksAhead` weeks ahead */
-export function rhythmWindow(env: DateEnv, weeksBack: number, weeksAhead: number): { from: Date; to: Date } {
-    const currentWeek = weekStartWall(env, env.now());
-    return {
-        from: weekRange(env, currentWeek - (weeksBack - 1) * 7 * DAY_MS).from,
-        to: weekRange(env, currentWeek + weeksAhead * 7 * DAY_MS).to,
-    };
-}
-
-/** Weekly counts for the rhythm strip; each item sits in the week of its feed date */
-export function computeRhythm(env: DateEnv, rows: RhythmRow[], weeksBack: number, weeksAhead: number): RhythmWeek[] {
-    const now = env.now();
-    const currentWeek = weekStartWall(env, now);
-    const first = currentWeek - (weeksBack - 1) * 7 * DAY_MS;
-    const weeks: RhythmWeek[] = [];
-    for (let i = 0; i < weeksBack + weeksAhead; i++) {
-        const wallStart = first + i * 7 * DAY_MS;
-        weeks.push({ wallStart, total: 0, byType: [], isFuture: wallStart > currentWeek, isCurrent: wallStart === currentWeek });
-    }
-    const index = (wallWeek: number) => Math.round((wallWeek - first) / (7 * DAY_MS));
-    for (const row of rows) {
-        const i = index(weekStartWall(env, row.date));
-        if (i < 0 || i >= weeks.length) continue;
-        const week = weeks[i];
-        week.total++;
-        const t = week.byType.find((b) => b.entity === row.entity);
-        if (t) t.count++;
-        else week.byType.push({ entity: row.entity, count: 1 });
-    }
-    return weeks;
-}
-
-/** Date range (real instants) covered by a rhythm week, for filtering */
-export function weekRange(env: DateEnv, wallStart: number): { from: Date; to: Date } {
-    const offset = env.offsetMinutes(new Date(wallStart)) * 60000;
-    return { from: new Date(wallStart - offset), to: new Date(wallStart + 7 * DAY_MS - offset) };
-}
-
-export function wallYear(env: DateEnv, date: Date): number {
-    return toWall(env, date).getUTCFullYear();
 }
