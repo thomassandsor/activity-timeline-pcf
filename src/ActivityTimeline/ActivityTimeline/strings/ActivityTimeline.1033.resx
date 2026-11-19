@@ -37,10 +37,10 @@
     <value>A configurable timeline of activities and notes for any table, with preview, filters and activity overview.</value>
   </data>
   <data name="Anchor_Name" xml:space="preserve">
-    <value>Host column</value>
+    <value>Host column (optional)</value>
   </data>
   <data name="Anchor_Description" xml:space="preserve">
-    <value>Any column on the form. The timeline doesn't read or change it.</value>
+    <value>Optional. Leave unbound to add the timeline as a standalone component. The timeline never reads or changes this column.</value>
   </data>
   <data name="ActivityTypes_Name" xml:space="preserve">
     <value>Activity types</value>

@@ -37,10 +37,10 @@
     <value>En konfigurerbar tidslinje med aktiviteter og noter for alle tabeller, med eksempelvisning, filtre og aktivitetsoversigt.</value>
   </data>
   <data name="Anchor_Name" xml:space="preserve">
-    <value>Værtskolonne</value>
+    <value>Værtskolonne (valgfri)</value>
   </data>
   <data name="Anchor_Description" xml:space="preserve">
-    <value>En hvilken som helst kolonne i formularen. Tidslinjen hverken læser eller ændrer den.</value>
+    <value>Valgfri. Lad den stå ubundet for at tilføje tidslinjen som en selvstændig komponent. Tidslinjen læser eller ændrer aldrig denne kolonne.</value>
   </data>
   <data name="ActivityTypes_Name" xml:space="preserve">
     <value>Aktivitetstyper</value>

@@ -37,10 +37,10 @@
     <value>En konfigurerbar tidslinje med aktiviteter og notater for alle tabeller, med forhåndsvisning, filtre og aktivitetsoversikt.</value>
   </data>
   <data name="Anchor_Name" xml:space="preserve">
-    <value>Vertskolonne</value>
+    <value>Vertskolonne (valgfri)</value>
   </data>
   <data name="Anchor_Description" xml:space="preserve">
-    <value>En hvilken som helst kolonne på skjemaet. Tidslinjen leser eller endrer den ikke.</value>
+    <value>Valgfri. La den stå ubundet for å legge til tidslinjen som en frittstående komponent. Tidslinjen leser eller endrer aldri denne kolonnen.</value>
   </data>
   <data name="ActivityTypes_Name" xml:space="preserve">
     <value>Aktivitetstyper</value>

@@ -14,12 +14,12 @@ const S = {
         "En konfigurerbar tidslinje med aktiviteter och anteckningar för alla tabeller, med förhandsgranskning, filter och aktivitetsöversikt.",
         "En konfigurerbar tidslinje med aktiviteter og noter for alle tabeller, med eksempelvisning, filtre og aktivitetsoversigt.",
     ],
-    Anchor_Name: ["Host column", "Vertskolonne", "Värdkolumn", "Værtskolonne"],
+    Anchor_Name: ["Host column (optional)", "Vertskolonne (valgfri)", "Värdkolumn (valfri)", "Værtskolonne (valgfri)"],
     Anchor_Description: [
-        "Any column on the form. The timeline doesn't read or change it.",
-        "En hvilken som helst kolonne på skjemaet. Tidslinjen leser eller endrer den ikke.",
-        "Valfri kolumn i formuläret. Tidslinjen varken läser eller ändrar den.",
-        "En hvilken som helst kolonne i formularen. Tidslinjen hverken læser eller ændrer den.",
+        "Optional. Leave unbound to add the timeline as a standalone component. The timeline never reads or changes this column.",
+        "Valgfri. La den stå ubundet for å legge til tidslinjen som en frittstående komponent. Tidslinjen leser eller endrer aldri denne kolonnen.",
+        "Valfri. Lämna obunden för att lägga till tidslinjen som en fristående komponent. Tidslinjen läser eller ändrar aldrig den här kolumnen.",
+        "Valgfri. Lad den stå ubundet for at tilføje tidslinjen som en selvstændig komponent. Tidslinjen læser eller ændrer aldrig denne kolonne.",
     ],
     ActivityTypes_Name: ["Activity types", "Aktivitetstyper", "Aktivitetstyper", "Aktivitetstyper"],
     ActivityTypes_Description: [

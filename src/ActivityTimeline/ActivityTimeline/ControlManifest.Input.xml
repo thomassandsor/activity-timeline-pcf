@@ -1,24 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="Sandsor" constructor="ActivityTimeline" version="0.3.4" display-name-key="Control_Name" description-key="Control_Description" control-type="virtual" >
+  <control namespace="Sandsor" constructor="ActivityTimeline" version="0.3.5" display-name-key="Control_Name" description-key="Control_Description" control-type="virtual" >
     <external-service-usage enabled="false">
     </external-service-usage>
 
-    <!-- The timeline doesn't read or write this column. It only anchors the control on the form, so any column will do. -->
-    <type-group name="anyColumn">
-      <type>SingleLine.Text</type>
-      <type>SingleLine.Email</type>
-      <type>SingleLine.Phone</type>
-      <type>SingleLine.URL</type>
-      <type>SingleLine.TextArea</type>
-      <type>Multiple</type>
-      <type>Whole.None</type>
-      <type>DateAndTime.DateAndTime</type>
-      <type>DateAndTime.DateOnly</type>
-      <type>OptionSet</type>
-      <type>TwoOptions</type>
-    </type-group>
-    <property name="anchor" display-name-key="Anchor_Name" description-key="Anchor_Description" of-type-group="anyColumn" usage="bound" required="true" />
+    <!-- Optional and unused by the timeline. With no required bound property the control can also be added to a form section as a standalone component. -->
+    <property name="anchor" display-name-key="Anchor_Name" description-key="Anchor_Description" of-type="SingleLine.Text" usage="bound" required="false" />
 
     <property name="activityTypes" display-name-key="ActivityTypes_Name" description-key="ActivityTypes_Description" of-type="SingleLine.Text" usage="input" required="false" default-value="email,phonecall,task,appointment" />
     <property name="includeNotes" display-name-key="IncludeNotes_Name" description-key="IncludeNotes_Description" of-type="Enum" usage="input" required="false" default-value="1">

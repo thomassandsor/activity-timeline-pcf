@@ -37,10 +37,10 @@
     <value>En konfigurerbar tidslinje med aktiviteter och anteckningar för alla tabeller, med förhandsgranskning, filter och aktivitetsöversikt.</value>
   </data>
   <data name="Anchor_Name" xml:space="preserve">
-    <value>Värdkolumn</value>
+    <value>Värdkolumn (valfri)</value>
   </data>
   <data name="Anchor_Description" xml:space="preserve">
-    <value>Valfri kolumn i formuläret. Tidslinjen varken läser eller ändrar den.</value>
+    <value>Valfri. Lämna obunden för att lägga till tidslinjen som en fristående komponent. Tidslinjen läser eller ändrar aldrig den här kolumnen.</value>
   </data>
   <data name="ActivityTypes_Name" xml:space="preserve">
     <value>Aktivitetstyper</value>
